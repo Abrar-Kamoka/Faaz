@@ -1,0 +1,61 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup Label="MediatR / CQRS">
+    <PackageVersion Include="MediatR" Version="12.4.1" />
+  </ItemGroup>
+  <ItemGroup Label="Validation">
+    <PackageVersion Include="FluentValidation" Version="11.11.0" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+    <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.0" />
+  </ItemGroup>
+  <ItemGroup Label="Mapping">
+    <PackageVersion Include="Mapster" Version="7.4.0" />
+  </ItemGroup>
+  <ItemGroup Label="EF Core">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8" />
+  </ItemGroup>
+  <ItemGroup Label="ASP.NET Core Identity">
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup Label="JWT / Auth">
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.4.0" />
+  </ItemGroup>
+  <ItemGroup Label="Logging">
+    <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Seq" Version="8.0.0" />
+    <PackageVersion Include="Serilog.Enrichers.CorrelationId" Version="3.0.1" />
+    <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.0" />
+  </ItemGroup>
+  <ItemGroup Label="API / Swagger">
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="7.3.1" />
+  </ItemGroup>
+  <ItemGroup Label="Gateway">
+    <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
+  </ItemGroup>
+  <ItemGroup Label="Email">
+    <PackageVersion Include="MailKit" Version="4.8.0" />
+  </ItemGroup>
+  <ItemGroup Label="Resilience">
+    <PackageVersion Include="Polly" Version="8.4.2" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="8.0.0" />
+  </ItemGroup>
+  <ItemGroup Label="DI / Utilities">
+    <PackageVersion Include="Scrutor" Version="4.2.2" />
+  </ItemGroup>
+  <ItemGroup Label="Sequential GUIDs">
+    <PackageVersion Include="RT.Comb" Version="4.0.0" />
+  </ItemGroup>
+  <ItemGroup Label="JWT Tokens">
+    <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.4.0" />
+  </ItemGroup>
+  <ItemGroup Label="Mapping DI">
+    <PackageVersion Include="Mapster.DependencyInjection" Version="1.0.2" />
+  </ItemGroup>
+</Project>

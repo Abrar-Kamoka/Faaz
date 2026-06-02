@@ -1,0 +1,34 @@
+services:
+
+  gateway:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    build:
+      target: build
+
+  identity:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Smtp__Host: mailhog
+      Smtp__Port: 1025
+      Smtp__UseSsl: "false"
+    build:
+      target: build
+    volumes:
+      - ./src/Services/Identity/Faaz.Services.Identity:/app/src
+
+  student:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    build:
+      target: build
+    volumes:
+      - ./src/Services/Student/Faaz.Services.Student:/app/src
+
+  consultant:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    build:
+      target: build
+    volumes:
+      - ./src/Services/Consultant/Faaz.Services.Consultant:/app/src

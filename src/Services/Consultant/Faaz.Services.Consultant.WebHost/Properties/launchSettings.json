@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Faaz.Services.Consultant.WebHost": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:55132;http://localhost:55133"
+    }
+  }
+}

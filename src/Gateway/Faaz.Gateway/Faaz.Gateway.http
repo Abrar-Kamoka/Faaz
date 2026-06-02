@@ -1,0 +1,6 @@
+@Faaz.Gateway_HostAddress = http://localhost:5127
+
+GET {{Faaz.Gateway_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

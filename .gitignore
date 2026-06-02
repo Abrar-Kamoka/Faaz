@@ -1,0 +1,108 @@
+# ─────────────────────────────────────────────
+#  .NET build outputs
+# ─────────────────────────────────────────────
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+[Bb]in/
+[Oo]bj/
+bld/
+publish/
+[Ll]og/
+[Ll]ogs/
+*.binlog
+
+# ─────────────────────────────────────────────
+#  Visual Studio
+# ─────────────────────────────────────────────
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.slnLaunch.user
+*.vsp
+*.vspx
+*.sap
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+MigrationBackup/
+Dox/
+# ─────────────────────────────────────────────
+#  JetBrains Rider
+# ─────────────────────────────────────────────
+.idea/
+*.sln.iml
+
+# ─────────────────────────────────────────────
+#  VS Code (keep .vscode/extensions.json & settings.json if desired)
+# ─────────────────────────────────────────────
+.vscode/launch.json
+.vscode/tasks.json
+
+# ─────────────────────────────────────────────
+#  NuGet
+# ─────────────────────────────────────────────
+*.nupkg
+*.snupkg
+packages/
+!packages/build/
+
+# ─────────────────────────────────────────────
+#  Environment / secrets
+# ─────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+# .env.example is intentionally committed — it documents required variables
+
+# The Identity service appsettings.Development.json contains the RSA private key.
+# Each developer must generate their own key:
+#   dotnet run --project infra/scripts/GenerateDevKey (or copy from team vault)
+src/Services/Identity/Faaz.Services.Identity/appsettings.Development.json
+
+# ─────────────────────────────────────────────
+#  Docker
+# ─────────────────────────────────────────────
+
+# ─────────────────────────────────────────────
+#  Frontend — Next.js
+# ─────────────────────────────────────────────
+src/Frontend/.next/
+src/Frontend/out/
+src/Frontend/node_modules/
+src/Frontend/.env.local
+src/Frontend/.env.development.local
+src/Frontend/.env.test.local
+src/Frontend/.env.production.local
+src/Frontend/npm-debug.log*
+src/Frontend/yarn-debug.log*
+src/Frontend/yarn-error.log*
+
+# ─────────────────────────────────────────────
+#  Claude Code
+# ─────────────────────────────────────────────
+.claude/settings.local.json
+
+# ─────────────────────────────────────────────
+#  OS / editor noise
+# ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.bak
+*.tmp
+*~
+
+# ─────────────────────────────────────────────
+#  EF Core design-time build hosts (generated per-project)
+# ─────────────────────────────────────────────
+BuildHost-net472/
+BuildHost-netcore/
+
+# ─────────────────────────────────────────────
+#  Miscellaneous tool caches
+# ─────────────────────────────────────────────
+*.lscache

@@ -1,0 +1,24 @@
+<Solution>
+  <Folder Name="/Gateway/">
+    <Project Path="src/Gateway/Faaz.Gateway/Faaz.Gateway.csproj" />
+  </Folder>
+  <Folder Name="/Services/Consultant/">
+    <Project Path="src/Services/Consultant/Faaz.Services.Consultant.Domain/Faaz.Services.Consultant.Domain.csproj" />
+    <Project Path="src/Services/Consultant/Faaz.Services.Consultant.Infrastructure/Faaz.Services.Consultant.Infrastructure.csproj" />
+    <Project Path="src/Services/Consultant/Faaz.Services.Consultant.WebHost/Faaz.Services.Consultant.WebHost.csproj" />
+  </Folder>
+  <Folder Name="/Services/Identity/">
+    <Project Path="src/Services/Identity/Faaz.Services.Identity.Domain/Faaz.Services.Identity.Domain.csproj" />
+    <Project Path="src/Services/Identity/Faaz.Services.Identity.Infrastructure/Faaz.Services.Identity.Infrastructure.csproj" />
+    <Project Path="src/Services/Identity/Faaz.Services.Identity.WebHost/Faaz.Services.Identity.WebHost.csproj" />
+  </Folder>
+  <Folder Name="/Services/Student/">
+    <Project Path="src/Services/Student/Faaz.Services.Student.Domain/Faaz.Services.Student.Domain.csproj" />
+    <Project Path="src/Services/Student/Faaz.Services.Student.Infrastructure/Faaz.Services.Student.Infrastructure.csproj" />
+    <Project Path="src/Services/Student/Faaz.Services.Student.WebHost/Faaz.Services.Student.WebHost.csproj" />
+  </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="src/Shared/Faaz.BuildingBlocks/Faaz.BuildingBlocks.csproj" />
+    <Project Path="src/Shared/Faaz.SharedKernel/Faaz.SharedKernel.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,134 @@
+services:
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+      - ./infra/docker/mssql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C -Q "SELECT 1" -b -o /dev/null
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - faaz-net
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+    networks:
+      - faaz-net
+
+  seq:
+    image: datalust/seq:latest
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "5341:80"
+    volumes:
+      - seq_data:/data
+    networks:
+      - faaz-net
+
+  gateway:
+    build:
+      context: .
+      dockerfile: src/Gateway/Faaz.Gateway/Dockerfile
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__FaazDb: "${DB_CONNECTION_STRING}"
+      Serilog__SeqUrl: "${SEQ_URL}"
+    depends_on:
+      identity:
+        condition: service_started
+      student:
+        condition: service_started
+      consultant:
+        condition: service_started
+    networks:
+      - faaz-net
+
+  identity:
+    build:
+      context: .
+      dockerfile: src/Services/Identity/Faaz.Services.Identity/Dockerfile
+    ports:
+      - "5101:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__FaazDb: "${DB_CONNECTION_STRING}"
+      Jwt__PrivateKeyPem: "${IDENTITY_JWT_PRIVATE_KEY_PEM}"
+      ServiceApiKey: "${SERVICE_API_KEY}"
+      AdminSeed__Email: "${ADMIN_SEED_EMAIL}"
+      AdminSeed__Password: "${ADMIN_SEED_PASSWORD}"
+      Smtp__Host: "${SMTP_HOST}"
+      Smtp__Port: "${SMTP_PORT}"
+      Smtp__FromEmail: "${SMTP_FROM_EMAIL}"
+      Smtp__FromName: "${SMTP_FROM_NAME}"
+      Smtp__UseSsl: "${SMTP_USE_SSL}"
+      FrontendBaseUrl: "${FRONTEND_BASE_URL}"
+      Services__StudentServiceUrl: "http://student:8080"
+      Services__ConsultantServiceUrl: "http://consultant:8080"
+      Serilog__SeqUrl: "${SEQ_URL}"
+    depends_on:
+      mssql:
+        condition: service_healthy
+    networks:
+      - faaz-net
+
+  student:
+    build:
+      context: .
+      dockerfile: src/Services/Student/Faaz.Services.Student/Dockerfile
+    ports:
+      - "5102:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__FaazDb: "${DB_CONNECTION_STRING}"
+      Jwt__Authority: "http://identity:8080"
+      Jwt__Audience: "faaz-api"
+      ServiceApiKey: "${SERVICE_API_KEY}"
+      Serilog__SeqUrl: "${SEQ_URL}"
+    depends_on:
+      mssql:
+        condition: service_healthy
+    networks:
+      - faaz-net
+
+  consultant:
+    build:
+      context: .
+      dockerfile: src/Services/Consultant/Faaz.Services.Consultant/Dockerfile
+    ports:
+      - "5103:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__FaazDb: "${DB_CONNECTION_STRING}"
+      Jwt__Authority: "http://identity:8080"
+      Jwt__Audience: "faaz-api"
+      ServiceApiKey: "${SERVICE_API_KEY}"
+      Serilog__SeqUrl: "${SEQ_URL}"
+    depends_on:
+      mssql:
+        condition: service_healthy
+    networks:
+      - faaz-net
+
+volumes:
+  mssql_data:
+  seq_data:
+
+networks:
+  faaz-net:
+    driver: bridge
