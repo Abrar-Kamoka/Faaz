@@ -1,6 +1,7 @@
 using Faaz.Services.Student.WebHost.Features.StudentProfile.Commands;
 using Faaz.Services.Student.WebHost.Features.StudentProfile.DTOs;
 using Faaz.Services.Student.WebHost.Features.StudentProfile.Queries;
+using Faaz.SharedKernel.Abstractions;
 using Faaz.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -136,6 +137,33 @@ public class StudentProfileController : ControllerBase
 
         var result = await _mediator.Send(new GetProfileCompletenessQuery { UserId = userId }, ct);
         return Ok(ApiResponse.Ok(result));
+    }
+
+    /// <summary>Upload or replace the student's profile photo.</summary>
+    [HttpPut("{userId:guid}/photo")]
+    [Authorize]
+    [IgnoreAntiforgeryToken]
+    [DisableRequestSizeLimit]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UpdatePhoto(Guid userId, IFormFile photo, [FromServices] IFileStorageService fileStorage, CancellationToken ct)
+    {
+        if (!IsOwner(userId))
+            return StatusCode(403, ApiResponse.Fail(403, "Forbidden."));
+
+        if (photo.Length > 5 * 1024 * 1024)
+            return BadRequest(ApiResponse.Fail(400, "File must not exceed 5MB."));
+
+        var allowed = new[] { "image/jpeg", "image/png", "image/webp" };
+        if (!allowed.Contains(photo.ContentType))
+            return BadRequest(ApiResponse.Fail(400, "Only JPEG, PNG, or WebP images are accepted."));
+
+        await using var stream = photo.OpenReadStream();
+        var storedPath = await fileStorage.UploadAsync(stream, photo.FileName, FileCategory.Profiles, ct);
+
+        await _mediator.Send(new UpdateStudentPhotoCommand { UserId = userId, PhotoUrl = fileStorage.GetUrl(storedPath) }, ct);
+        return Ok(ApiResponse.NoContent("Photo updated."));
     }
 
     private bool IsOwner(Guid userId)

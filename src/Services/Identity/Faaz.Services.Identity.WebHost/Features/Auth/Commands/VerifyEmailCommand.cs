@@ -1,7 +1,8 @@
 using Faaz.Services.Identity.Domain.Entities;
 using Faaz.Services.Identity.WebHost.Features.Auth.DTOs;
-using Faaz.Services.Identity.WebHost.HttpClients;
 using Faaz.SharedKernel.Exceptions;
+using Faaz.SharedKernel.IntegrationEvents;
+using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -18,17 +19,17 @@ public class VerifyEmailCommand : IRequest
 internal sealed class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand>
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IConsultantServiceClient _consultantClient;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<VerifyEmailCommandHandler> _logger;
 
     public VerifyEmailCommandHandler(
         UserManager<ApplicationUser> userManager,
-        IConsultantServiceClient consultantClient,
+        IPublishEndpoint publishEndpoint,
         ILogger<VerifyEmailCommandHandler> logger)
     {
-        _userManager = userManager;
-        _consultantClient = consultantClient;
-        _logger = logger;
+        _userManager     = userManager;
+        _publishEndpoint = publishEndpoint;
+        _logger          = logger;
     }
 
     public async Task Handle(VerifyEmailCommand command, CancellationToken ct)
@@ -53,14 +54,10 @@ internal sealed class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCom
             await _userManager.UpdateAsync(user);
         }
 
-        // Always run Consultant side-effects — both are idempotent.
-        // Guards against the case where UpdateAsync succeeded but a prior
-        // Consultant service call failed, leaving the profile stub missing.
+        // Publish event — Consultant service consumer handles both SetApplicationUnderReview
+        // and CreateProfileStub in a single idempotent consumer.
         if (user.Role == UserRole.Consultant)
-        {
-            await _consultantClient.SetApplicationUnderReviewAsync(user.Id, ct);
-            await _consultantClient.CreateProfileStubAsync(user.Id, ct);
-        }
+            await _publishEndpoint.Publish(new ConsultantEmailVerifiedEvent(user.Id), ct);
 
         _logger.LogInformation("Email verified for UserId: {UserId}", user.Id);
     }

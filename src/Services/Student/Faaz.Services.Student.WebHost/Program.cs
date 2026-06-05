@@ -1,6 +1,9 @@
 using Faaz.BuildingBlocks.Extensions;
+using Faaz.BuildingBlocks.FileStorage;
 using Faaz.Services.Student.Infrastructure.DatabaseContext;
 using Faaz.Services.Student.Infrastructure.Extensions;
+using Faaz.Services.Student.WebHost.Consumers;
+using Faaz.Services.Student.WebHost.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -21,6 +24,12 @@ try
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddStudentInfrastructure(builder.Configuration, typeof(Program).Assembly, builder.Environment);
+    builder.Services.AddStudentHttpClients(builder.Configuration, builder.Environment);
+    builder.Services.AddFaazRabbitMq(builder.Configuration, builder.Environment, x =>
+    {
+        x.AddConsumer<StudentRegisteredConsumer>();
+    });
+    builder.Services.AddFileStorage(builder.Configuration);
 
     var app = builder.Build();
 
@@ -35,6 +44,7 @@ try
         Log.Warning(ex, "DB migration skipped — run migrations manually before using data endpoints");
     }
 
+    app.UseStaticFiles();
     app.UseFaazMiddleware();
     app.UseSerilogRequestLogging();
     app.UseAuthentication();

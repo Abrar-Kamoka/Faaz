@@ -37,17 +37,17 @@ public sealed class IdentityDbContext : IdentityDbContext<
 
         builder.ApplyConfigurationsFromAssembly(typeof(IdentityDbContext).Assembly);
 
-        // Configure SrNo as DB IDENTITY for all BaseEntity descendants (RefreshToken, PasswordResetToken).
+        // SrNo is managed by application code (NewSerialNumberAsync → MAX+1), not by the database.
         foreach (var entity in builder.Model.GetEntityTypes()
             .Where(e => typeof(BaseEntity).IsAssignableFrom(e.ClrType)))
         {
             builder.Entity(entity.ClrType)
                    .Property(nameof(BaseEntity.SrNo))
-                   .ValueGeneratedOnAdd();
+                   .ValueGeneratedNever();
         }
 
         // ApplicationUser has its own SrNo (not inherited from BaseEntity) — configure separately.
-        builder.Entity<ApplicationUser>().Property(u => u.SrNo).ValueGeneratedOnAdd();
+        builder.Entity<ApplicationUser>().Property(u => u.SrNo).ValueGeneratedNever();
 
         SeedAdminRole(builder);
     }

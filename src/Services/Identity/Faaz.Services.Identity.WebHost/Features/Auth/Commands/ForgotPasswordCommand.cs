@@ -2,6 +2,8 @@ using Faaz.Services.Identity.Domain.Entities;
 using Faaz.Services.Identity.Infrastructure.Interfaces.Auth;
 using Faaz.Services.Identity.Infrastructure.Interfaces.Token;
 using Faaz.Services.Identity.WebHost.Features.Auth.DTOs;
+using Faaz.SharedKernel.IntegrationEvents;
+using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -17,22 +19,22 @@ internal sealed class ForgotPasswordCommandHandler : IRequestHandler<ForgotPassw
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IPasswordResetTokenServices _tokenServices;
-    private readonly IEmailService _emailService;
     private readonly ITokenService _tokenService;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<ForgotPasswordCommandHandler> _logger;
 
     public ForgotPasswordCommandHandler(
         UserManager<ApplicationUser> userManager,
         IPasswordResetTokenServices tokenServices,
-        IEmailService emailService,
         ITokenService tokenService,
+        IPublishEndpoint publishEndpoint,
         ILogger<ForgotPasswordCommandHandler> logger)
     {
-        _userManager = userManager;
-        _tokenServices = tokenServices;
-        _emailService = emailService;
-        _tokenService = tokenService;
-        _logger = logger;
+        _userManager     = userManager;
+        _tokenServices   = tokenServices;
+        _tokenService    = tokenService;
+        _publishEndpoint = publishEndpoint;
+        _logger          = logger;
     }
 
     public async Task Handle(ForgotPasswordCommand command, CancellationToken ct)
@@ -52,7 +54,9 @@ internal sealed class ForgotPasswordCommandHandler : IRequestHandler<ForgotPassw
         await _tokenServices.AddAsync(token, ct);
         await _tokenServices.SaveChangesAsync(ct);
 
-        await _emailService.SendPasswordResetAsync(user.Email!, user.FirstName, plaintext, ct);
-        _logger.LogInformation("Password reset email sent for UserId: {UserId}", user.Id);
+        await _publishEndpoint.Publish(new SendPasswordResetEmailEvent(
+            user.Email!, user.FirstName, plaintext), ct);
+
+        _logger.LogInformation("Password reset email event published for UserId: {UserId}", user.Id);
     }
 }

@@ -99,6 +99,9 @@ namespace Faaz.Services.Identity.Infrastructure.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("EmailNotificationsEnabled")
+                        .HasColumnType("bit");
+
                     b.Property<string>("EmailVerificationToken")
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
@@ -118,6 +121,9 @@ namespace Faaz.Services.Identity.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("InAppNotificationsEnabled")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -167,10 +173,7 @@ namespace Faaz.Services.Identity.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("SrNo")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SrNo"));
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -289,10 +292,7 @@ namespace Faaz.Services.Identity.Infrastructure.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("SrNo")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SrNo"));
 
                     b.Property<string>("Token")
                         .IsRequired()
@@ -378,10 +378,7 @@ namespace Faaz.Services.Identity.Infrastructure.Migrations
                         .HasColumnType("nvarchar(45)");
 
                     b.Property<int>("SrNo")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SrNo"));
 
                     b.Property<string>("Token")
                         .IsRequired()

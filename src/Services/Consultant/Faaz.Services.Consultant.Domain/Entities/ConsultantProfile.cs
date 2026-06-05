@@ -38,4 +38,5 @@ public class ConsultantProfile : BaseSoftDeleteModel
     public ConsultantApplication Application { get; set; } = null!;
     public ICollection<ConsultantSessionType> SessionTypes { get; set; } = [];
     public ICollection<ConsultantAvailabilitySlot> AvailabilitySlots { get; set; } = [];
+    public ICollection<ConsultantCredential> Credentials { get; set; } = [];
 }

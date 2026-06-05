@@ -3,7 +3,6 @@ using Faaz.BuildingBlocks.Persistence;
 using Faaz.Services.Consultant.Infrastructure.DatabaseContext;
 using Faaz.Services.Consultant.Infrastructure.Interfaces;
 using Faaz.Services.Consultant.Infrastructure.Managers;
-using Faaz.Services.Consultant.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -35,7 +34,7 @@ public static class ServiceRegistrationExtensions
 
         services.AddScoped<IConsultantApplicationServices, ConsultantApplicationManager>();
         services.AddScoped<IConsultantProfileServices, ConsultantProfileManager>();
-        services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<IConsultantCredentialServices, ConsultantCredentialManager>();
 
         services.AddHttpContextAccessor();
 

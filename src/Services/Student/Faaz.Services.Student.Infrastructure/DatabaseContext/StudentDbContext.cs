@@ -18,13 +18,13 @@ public class StudentDbContext : DbContext
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(typeof(StudentDbContext).Assembly);
 
-        // Configure SrNo as DB IDENTITY for all BaseEntity descendants.
+        // SrNo is managed by application code (NewSerialNumberAsync → MAX+1), not by the database.
         foreach (var entity in builder.Model.GetEntityTypes()
             .Where(e => typeof(BaseEntity).IsAssignableFrom(e.ClrType)))
         {
             builder.Entity(entity.ClrType)
                    .Property(nameof(BaseEntity.SrNo))
-                   .ValueGeneratedOnAdd();
+                   .ValueGeneratedNever();
         }
 
         // Global soft-delete filters — deleted records are invisible to all queries.

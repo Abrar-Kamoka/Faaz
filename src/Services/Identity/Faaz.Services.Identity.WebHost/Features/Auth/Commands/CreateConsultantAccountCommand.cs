@@ -3,6 +3,8 @@ using Faaz.Services.Identity.Infrastructure.Interfaces.Token;
 using Faaz.Services.Identity.WebHost.Features.Auth.DTOs;
 using Faaz.Services.Identity.WebHost.HttpClients;
 using Faaz.SharedKernel.Exceptions;
+using Faaz.SharedKernel.IntegrationEvents;
+using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -20,21 +22,21 @@ internal sealed class CreateConsultantAccountCommandHandler : IRequestHandler<Cr
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IConsultantServiceClient _consultantClient;
-    private readonly IEmailService _emailService;
     private readonly ITokenService _tokenService;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<CreateConsultantAccountCommandHandler> _logger;
 
     public CreateConsultantAccountCommandHandler(
         UserManager<ApplicationUser> userManager,
         IConsultantServiceClient consultantClient,
-        IEmailService emailService,
         ITokenService tokenService,
+        IPublishEndpoint publishEndpoint,
         ILogger<CreateConsultantAccountCommandHandler> logger)
     {
         _userManager      = userManager;
         _consultantClient = consultantClient;
-        _emailService     = emailService;
         _tokenService     = tokenService;
+        _publishEndpoint  = publishEndpoint;
         _logger           = logger;
     }
 
@@ -79,7 +81,9 @@ internal sealed class CreateConsultantAccountCommandHandler : IRequestHandler<Cr
         }
 
         await _consultantClient.LinkUserToApplicationAsync(applicationId, user.Id, ct);
-        await _emailService.SendEmailVerificationAsync(email, app.FirstName, verifyPlaintext, ct);
+
+        await _publishEndpoint.Publish(new SendVerificationEmailEvent(
+            email, app.FirstName, verifyPlaintext), ct);
 
         _logger.LogInformation("Consultant account created. UserId: {UserId}", user.Id);
         return user.Id;

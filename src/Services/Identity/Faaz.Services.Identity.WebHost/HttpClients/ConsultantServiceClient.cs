@@ -70,34 +70,26 @@ internal sealed class ConsultantServiceClient : IConsultantServiceClient
     public async Task<bool> GetProfileIsCompleteAsync(Guid userId, CancellationToken ct)
     {
         var response = await _http.GetAsync($"/api/v1/consultant-profiles/internal/{userId}/is-complete", ct);
+        if (response.StatusCode == HttpStatusCode.NotFound) return false;
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<IsCompleteResponse>(cancellationToken: ct);
         return result?.IsComplete ?? false;
+    }
+
+    public async Task NotifyEmailVerifiedAsync(Guid userId, CancellationToken ct)
+    {
+        var r1 = await _http.PostAsync($"/api/v1/consultants/internal/applications/user/{userId}/set-under-review",
+            new StringContent("{}", System.Text.Encoding.UTF8, "application/json"), ct);
+        if (r1.StatusCode != HttpStatusCode.NotFound) r1.EnsureSuccessStatusCode();
+
+        var r2 = await _http.PostAsJsonAsync("/api/v1/consultant-profiles/internal/create-stub", new { userId }, ct);
+        r2.EnsureSuccessStatusCode();
     }
 
     public async Task LinkUserToApplicationAsync(Guid applicationId, Guid userId, CancellationToken ct)
     {
         var payload = new { applicationId, userId };
         var response = await _http.PostAsJsonAsync("/api/v1/consultants/internal/link-user", payload, ct);
-        response.EnsureSuccessStatusCode();
-    }
-
-    public async Task CreateProfileStubAsync(Guid userId, CancellationToken ct)
-    {
-        var payload = new { userId };
-        var response = await _http.PostAsJsonAsync("/api/v1/consultant-profiles/internal/create-stub", payload, ct);
-        response.EnsureSuccessStatusCode();
-    }
-
-    public async Task ActivateProfileAsync(Guid userId, CancellationToken ct)
-    {
-        var response = await _http.PostAsync($"/api/v1/consultant-profiles/internal/{userId}/activate", null, ct);
-        response.EnsureSuccessStatusCode();
-    }
-
-    public async Task SetApplicationUnderReviewAsync(Guid userId, CancellationToken ct)
-    {
-        var response = await _http.PostAsync($"/api/v1/consultants/internal/applications/user/{userId}/set-under-review", null, ct);
         response.EnsureSuccessStatusCode();
     }
 

@@ -1,7 +1,8 @@
 using Faaz.Services.Identity.Domain.Entities;
-using Faaz.Services.Identity.Infrastructure.Interfaces.Token;
 using Faaz.Services.Identity.WebHost.Features.AdminApplications.DTOs;
 using Faaz.Services.Identity.WebHost.HttpClients;
+using Faaz.SharedKernel.IntegrationEvents;
+using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -20,19 +21,19 @@ internal sealed class RejectApplicationCommandHandler : IRequestHandler<RejectAp
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IConsultantServiceClient _consultantClient;
-    private readonly IEmailService _emailService;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<RejectApplicationCommandHandler> _logger;
 
     public RejectApplicationCommandHandler(
         UserManager<ApplicationUser> userManager,
         IConsultantServiceClient consultantClient,
-        IEmailService emailService,
+        IPublishEndpoint publishEndpoint,
         ILogger<RejectApplicationCommandHandler> logger)
     {
-        _userManager = userManager;
+        _userManager     = userManager;
         _consultantClient = consultantClient;
-        _emailService = emailService;
-        _logger = logger;
+        _publishEndpoint = publishEndpoint;
+        _logger          = logger;
     }
 
     public async Task Handle(RejectApplicationCommand command, CancellationToken ct)
@@ -59,7 +60,15 @@ internal sealed class RejectApplicationCommandHandler : IRequestHandler<RejectAp
         }
 
         await _consultantClient.RejectApplicationAsync(command.ApplicationId, command.PostModel.Notes ?? string.Empty, ct);
-        await _emailService.SendConsultantRejectionAsync(app.Email, user?.FirstName ?? "Consultant", command.PostModel.Notes ?? string.Empty, ct);
+
+        // Publish instead of direct email call.
+        // Notification service consumer sends the rejection email.
+        if (user is not null)
+            await _publishEndpoint.Publish(new ConsultantRejectedEvent(
+                user.Id, user.Email!, command.PostModel.Notes ?? string.Empty), ct);
+        else
+            await _publishEndpoint.Publish(new ConsultantRejectedEvent(
+                Guid.Empty, app.Email, command.PostModel.Notes ?? string.Empty), ct);
 
         _logger.LogInformation("Application {ApplicationId} rejected", command.ApplicationId);
     }

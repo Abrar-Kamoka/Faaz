@@ -59,6 +59,36 @@ services:
     networks:
       - faaz-net
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: faaz-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - faaz-net
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: faaz-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - faaz-net
+
   identity:
     build:
       context: .
@@ -80,9 +110,15 @@ services:
       FrontendBaseUrl: "${FRONTEND_BASE_URL}"
       Services__StudentServiceUrl: "http://student:8080"
       Services__ConsultantServiceUrl: "http://consultant:8080"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__VHost: /
+      RabbitMq__Username: guest
+      RabbitMq__Password: guest
       Serilog__SeqUrl: "${SEQ_URL}"
     depends_on:
       mssql:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - faaz-net
@@ -99,9 +135,15 @@ services:
       Jwt__Authority: "http://identity:8080"
       Jwt__Audience: "faaz-api"
       ServiceApiKey: "${SERVICE_API_KEY}"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__VHost: /
+      RabbitMq__Username: guest
+      RabbitMq__Password: guest
       Serilog__SeqUrl: "${SEQ_URL}"
     depends_on:
       mssql:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - faaz-net
@@ -118,16 +160,59 @@ services:
       Jwt__Authority: "http://identity:8080"
       Jwt__Audience: "faaz-api"
       ServiceApiKey: "${SERVICE_API_KEY}"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__VHost: /
+      RabbitMq__Username: guest
+      RabbitMq__Password: guest
       Serilog__SeqUrl: "${SEQ_URL}"
     depends_on:
       mssql:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - faaz-net
+
+  notification:
+    build:
+      context: .
+      dockerfile: src/Services/Notification/Faaz.Services.Notification.WebHost/Dockerfile
+    container_name: faaz-notification
+    ports:
+      - "55133:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__FaazDb: "${DB_CONNECTION_STRING}"
+      Identity__Authority: "http://identity:8080"
+      Identity__JwksUrl: "http://identity:8080/api/v1/auth/.well-known/jwks.json"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__VHost: /
+      RabbitMq__Username: guest
+      RabbitMq__Password: guest
+      Redis__ConnectionString: "redis:6379"
+      Jwt__Issuer: faaz-identity
+      Jwt__Audience: faaz-api
+      Smtp__Host: "${SMTP_HOST}"
+      Smtp__Port: "${SMTP_PORT}"
+      Smtp__FromEmail: "${SMTP_FROM_EMAIL}"
+      Smtp__FromName: "${SMTP_FROM_NAME}"
+      Smtp__UseSsl: "${SMTP_USE_SSL}"
+      Serilog__SeqUrl: "${SEQ_URL}"
+    depends_on:
+      mssql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      identity:
+        condition: service_started
     networks:
       - faaz-net
 
 volumes:
   mssql_data:
   seq_data:
+  rabbitmq_data:
+  redis_data:
 
 networks:
   faaz-net:

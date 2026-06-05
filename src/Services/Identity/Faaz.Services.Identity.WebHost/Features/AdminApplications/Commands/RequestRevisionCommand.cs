@@ -1,7 +1,8 @@
 using Faaz.Services.Identity.Domain.Entities;
-using Faaz.Services.Identity.Infrastructure.Interfaces.Token;
 using Faaz.Services.Identity.WebHost.Features.AdminApplications.DTOs;
 using Faaz.Services.Identity.WebHost.HttpClients;
+using Faaz.SharedKernel.IntegrationEvents;
+using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -20,19 +21,19 @@ internal sealed class RequestRevisionCommandHandler : IRequestHandler<RequestRev
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IConsultantServiceClient _consultantClient;
-    private readonly IEmailService _emailService;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<RequestRevisionCommandHandler> _logger;
 
     public RequestRevisionCommandHandler(
         UserManager<ApplicationUser> userManager,
         IConsultantServiceClient consultantClient,
-        IEmailService emailService,
+        IPublishEndpoint publishEndpoint,
         ILogger<RequestRevisionCommandHandler> logger)
     {
-        _userManager = userManager;
+        _userManager     = userManager;
         _consultantClient = consultantClient;
-        _emailService = emailService;
-        _logger = logger;
+        _publishEndpoint = publishEndpoint;
+        _logger          = logger;
     }
 
     public async Task Handle(RequestRevisionCommand command, CancellationToken ct)
@@ -58,7 +59,12 @@ internal sealed class RequestRevisionCommandHandler : IRequestHandler<RequestRev
         }
 
         await _consultantClient.RequestRevisionAsync(command.ApplicationId, command.PostModel.Notes ?? string.Empty, ct);
-        await _emailService.SendConsultantRevisionRequestAsync(app.Email, user?.FirstName ?? "Consultant", command.PostModel.Notes ?? string.Empty, ct);
+
+        // Publish instead of direct email call.
+        // Notification service consumer sends the revision request email.
+        if (user is not null)
+            await _publishEndpoint.Publish(new ConsultantRevisionRequestedEvent(
+                user.Id, user.Email!, command.PostModel.Notes ?? string.Empty), ct);
 
         _logger.LogInformation("Revision requested for application {ApplicationId}", command.ApplicationId);
     }

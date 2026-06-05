@@ -127,10 +127,7 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<int>("SrNo")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SrNo"));
 
                     b.Property<DateTime>("SubmittedAt")
                         .HasColumnType("datetime2");
@@ -262,10 +259,7 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("SrNo")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SrNo"));
 
                     b.Property<TimeOnly?>("StartTimeUtc")
                         .HasColumnType("time");
@@ -282,6 +276,80 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                         .HasDatabaseName("IX_ConsultantAvailabilitySlots_ConsultantProfileId");
 
                     b.ToTable("ConsultantAvailabilitySlots", (string)null);
+                });
+
+            modelBuilder.Entity("Faaz.Services.Consultant.Domain.Entities.ConsultantCredential", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ConsultantProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ExtraField1")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ExtraField2")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("SrNo")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StoredPath")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConsultantProfileId")
+                        .HasDatabaseName("IX_ConsultantCredentials_ConsultantProfileId");
+
+                    b.ToTable("ConsultantCredentials", (string)null);
                 });
 
             modelBuilder.Entity("Faaz.Services.Consultant.Domain.Entities.ConsultantProfile", b =>
@@ -376,10 +444,7 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("SrNo")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SrNo"));
 
                     b.Property<string>("StripeAccountId")
                         .HasMaxLength(100)
@@ -483,10 +548,7 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("SrNo")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SrNo"));
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -524,6 +586,18 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                     b.Navigation("Profile");
                 });
 
+            modelBuilder.Entity("Faaz.Services.Consultant.Domain.Entities.ConsultantCredential", b =>
+                {
+                    b.HasOne("Faaz.Services.Consultant.Domain.Entities.ConsultantProfile", "Profile")
+                        .WithMany("Credentials")
+                        .HasForeignKey("ConsultantProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_ConsultantCredentials_ConsultantProfiles_ConsultantProfileId");
+
+                    b.Navigation("Profile");
+                });
+
             modelBuilder.Entity("Faaz.Services.Consultant.Domain.Entities.ConsultantProfile", b =>
                 {
                     b.HasOne("Faaz.Services.Consultant.Domain.Entities.ConsultantApplication", "Application")
@@ -557,6 +631,8 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
             modelBuilder.Entity("Faaz.Services.Consultant.Domain.Entities.ConsultantProfile", b =>
                 {
                     b.Navigation("AvailabilitySlots");
+
+                    b.Navigation("Credentials");
 
                     b.Navigation("SessionTypes");
                 });

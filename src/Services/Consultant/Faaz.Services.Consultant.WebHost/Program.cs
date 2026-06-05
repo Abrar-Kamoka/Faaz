@@ -1,6 +1,8 @@
 using Faaz.BuildingBlocks.Extensions;
+using Faaz.BuildingBlocks.FileStorage;
 using Faaz.Services.Consultant.Infrastructure.DatabaseContext;
 using Faaz.Services.Consultant.Infrastructure.Extensions;
+using Faaz.Services.Consultant.WebHost.Consumers;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -21,6 +23,12 @@ try
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddConsultantInfrastructure(builder.Configuration, typeof(Program).Assembly, builder.Environment);
+    builder.Services.AddFaazRabbitMq(builder.Configuration, builder.Environment, x =>
+    {
+        x.AddConsumer<ConsultantEmailVerifiedConsumer>();
+        x.AddConsumer<ConsultantApprovedConsumer>();
+    });
+    builder.Services.AddFileStorage(builder.Configuration);
 
     var app = builder.Build();
 

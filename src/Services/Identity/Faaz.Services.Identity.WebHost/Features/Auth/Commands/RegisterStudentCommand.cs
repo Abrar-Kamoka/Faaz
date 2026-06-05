@@ -1,8 +1,9 @@
 using Faaz.Services.Identity.Domain.Entities;
 using Faaz.Services.Identity.Infrastructure.Interfaces.Token;
 using Faaz.Services.Identity.WebHost.Features.Auth.DTOs;
-using Faaz.Services.Identity.WebHost.HttpClients;
 using Faaz.SharedKernel.Exceptions;
+using Faaz.SharedKernel.IntegrationEvents;
+using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -19,23 +20,20 @@ public class RegisterStudentCommand : IRequest<Guid>
 internal sealed class RegisterStudentCommandHandler : IRequestHandler<RegisterStudentCommand, Guid>
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IEmailService _email;
-    private readonly IStudentServiceClient _studentClient;
     private readonly ITokenService _tokenService;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<RegisterStudentCommandHandler> _logger;
 
     public RegisterStudentCommandHandler(
         UserManager<ApplicationUser> userManager,
-        IEmailService email,
-        IStudentServiceClient studentClient,
         ITokenService tokenService,
+        IPublishEndpoint publishEndpoint,
         ILogger<RegisterStudentCommandHandler> logger)
     {
-        _userManager = userManager;
-        _email = email;
-        _studentClient = studentClient;
-        _tokenService = tokenService;
-        _logger = logger;
+        _userManager     = userManager;
+        _tokenService    = tokenService;
+        _publishEndpoint = publishEndpoint;
+        _logger          = logger;
     }
 
     public async Task<Guid> Handle(RegisterStudentCommand command, CancellationToken ct)
@@ -68,8 +66,12 @@ internal sealed class RegisterStudentCommandHandler : IRequestHandler<RegisterSt
             throw new InvalidOperationException($"User creation failed: {errors}");
         }
 
-        await _email.SendEmailVerificationAsync(command.PostModel.Email, command.PostModel.FirstName, plaintext, ct);
-        await _studentClient.CreateProfileStubAsync(user.Id, command.PostModel.Email, command.PostModel.FirstName, command.PostModel.LastName, ct);
+        await _publishEndpoint.Publish(new StudentRegisteredEvent(
+            user.Id,
+            command.PostModel.Email,
+            command.PostModel.FirstName,
+            command.PostModel.LastName,
+            plaintext), ct);
 
         _logger.LogInformation("Student registered: {UserId}", user.Id);
         return user.Id;

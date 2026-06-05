@@ -1,6 +1,7 @@
 using Faaz.BuildingBlocks.Extensions;
 using Faaz.Services.Identity.Infrastructure.DatabaseContext;
 using Faaz.Services.Identity.Infrastructure.Extensions;
+using Faaz.Services.Identity.WebHost.DevEmail;
 using Faaz.Services.Identity.WebHost.Extensions;
 using Faaz.Services.Identity.WebHost.Seeding;
 using Microsoft.AspNetCore.RateLimiting;
@@ -28,6 +29,21 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddIdentityInfrastructure(builder.Configuration, typeof(Program).Assembly, builder.Environment);
     builder.Services.AddIdentityHttpClients(builder.Configuration, builder.Environment);
+    builder.Services.AddFaazRabbitMq(builder.Configuration, builder.Environment, x =>
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            // In-memory bus: consume events in-process so emails reach MailHog/console without RabbitMQ.
+            x.AddConsumer<StudentRegisteredDevConsumer>();
+            x.AddConsumer<StudentProfileCreatorDevConsumer>();
+            x.AddConsumer<SendVerificationEmailDevConsumer>();
+            x.AddConsumer<SendPasswordResetEmailDevConsumer>();
+            x.AddConsumer<ConsultantEmailVerifiedDevConsumer>();
+            x.AddConsumer<ConsultantApprovedDevConsumer>();
+            x.AddConsumer<ConsultantRejectedDevConsumer>();
+            x.AddConsumer<ConsultantRevisionRequestedDevConsumer>();
+        }
+    });
 
     // Rate limiting — keyed by remote IP to slow brute-force and enumeration attacks.
     builder.Services.AddRateLimiter(opts =>

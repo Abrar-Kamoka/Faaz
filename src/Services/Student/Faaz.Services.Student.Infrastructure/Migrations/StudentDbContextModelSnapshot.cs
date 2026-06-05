@@ -64,10 +64,7 @@ namespace Faaz.Services.Student.Infrastructure.Migrations
                         .HasColumnType("nvarchar(1000)");
 
                     b.Property<int>("SrNo")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SrNo"));
 
                     b.Property<Guid>("StudentProfileId")
                         .HasColumnType("uniqueidentifier");
@@ -145,10 +142,7 @@ namespace Faaz.Services.Student.Infrastructure.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("SrNo")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SrNo"));
 
                     b.Property<Guid>("StudentProfileId")
                         .HasColumnType("uniqueidentifier");
@@ -264,10 +258,7 @@ namespace Faaz.Services.Student.Infrastructure.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("SrNo")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SrNo"));
 
                     b.Property<int?>("StudyTrack")
                         .HasColumnType("int");
@@ -350,10 +341,7 @@ namespace Faaz.Services.Student.Infrastructure.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("SrNo")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SrNo"));
 
                     b.Property<Guid>("StudentProfileId")
                         .HasColumnType("uniqueidentifier");

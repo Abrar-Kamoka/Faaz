@@ -13,19 +13,20 @@ public class ConsultantDbContext : DbContext
     public DbSet<ConsultantProfile> ConsultantProfiles => Set<ConsultantProfile>();
     public DbSet<ConsultantSessionType> ConsultantSessionTypes => Set<ConsultantSessionType>();
     public DbSet<ConsultantAvailabilitySlot> ConsultantAvailabilitySlots => Set<ConsultantAvailabilitySlot>();
+    public DbSet<ConsultantCredential> ConsultantCredentials => Set<ConsultantCredential>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(typeof(ConsultantDbContext).Assembly);
 
-        // Configure SrNo as DB IDENTITY for all BaseEntity descendants.
+        // SrNo is managed by application code (NewSerialNumberAsync → MAX+1), not by the database.
         foreach (var entity in builder.Model.GetEntityTypes()
             .Where(e => typeof(BaseEntity).IsAssignableFrom(e.ClrType)))
         {
             builder.Entity(entity.ClrType)
                    .Property(nameof(BaseEntity.SrNo))
-                   .ValueGeneratedOnAdd();
+                   .ValueGeneratedNever();
         }
 
         // Global soft-delete filters — deleted records are invisible to all queries.
@@ -33,5 +34,6 @@ public class ConsultantDbContext : DbContext
         builder.Entity<ConsultantProfile>().HasQueryFilter(e => !e.IsDeleted);
         // ConsultantSessionType uses hard delete — no query filter.
         builder.Entity<ConsultantAvailabilitySlot>().HasQueryFilter(e => !e.IsDeleted);
+        builder.Entity<ConsultantCredential>().HasQueryFilter(e => !e.IsDeleted);
     }
 }

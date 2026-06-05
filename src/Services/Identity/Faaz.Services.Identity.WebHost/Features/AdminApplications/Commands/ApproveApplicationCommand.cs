@@ -1,7 +1,8 @@
 using Faaz.Services.Identity.Domain.Entities;
-using Faaz.Services.Identity.Infrastructure.Interfaces.Token;
 using Faaz.Services.Identity.WebHost.Features.AdminApplications.DTOs;
 using Faaz.Services.Identity.WebHost.HttpClients;
+using Faaz.SharedKernel.IntegrationEvents;
+using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -20,19 +21,19 @@ internal sealed class ApproveApplicationCommandHandler : IRequestHandler<Approve
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IConsultantServiceClient _consultantClient;
-    private readonly IEmailService _emailService;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<ApproveApplicationCommandHandler> _logger;
 
     public ApproveApplicationCommandHandler(
         UserManager<ApplicationUser> userManager,
         IConsultantServiceClient consultantClient,
-        IEmailService emailService,
+        IPublishEndpoint publishEndpoint,
         ILogger<ApproveApplicationCommandHandler> logger)
     {
-        _userManager = userManager;
+        _userManager     = userManager;
         _consultantClient = consultantClient;
-        _emailService = emailService;
-        _logger = logger;
+        _publishEndpoint = publishEndpoint;
+        _logger          = logger;
     }
 
     public async Task Handle(ApproveApplicationCommand command, CancellationToken ct)
@@ -60,10 +61,13 @@ internal sealed class ApproveApplicationCommandHandler : IRequestHandler<Approve
 
         await _consultantClient.ApproveApplicationAsync(command.ApplicationId, command.PostModel.Notes, ct);
 
-        // ActivateProfileAsync throws if the profile is not yet complete — consultant must finish setup first.
-        await _consultantClient.ActivateProfileAsync(app.UserId.Value, ct);
-
-        await _emailService.SendConsultantApprovalAsync(user.Email!, user.FirstName, ct);
+        // Publish instead of HTTP ActivateProfileAsync + direct email.
+        // Consultant service consumer activates the profile.
+        // Notification service consumer sends the approval email + SignalR push.
+        await _publishEndpoint.Publish(new ConsultantApprovedEvent(
+            app.UserId.Value,
+            user.Email!,
+            user.FirstName), ct);
 
         _logger.LogInformation("Application {ApplicationId} approved for user {UserId}", command.ApplicationId, app.UserId);
     }

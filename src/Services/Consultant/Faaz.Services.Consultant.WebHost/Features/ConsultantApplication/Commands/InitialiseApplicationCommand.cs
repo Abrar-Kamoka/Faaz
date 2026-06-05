@@ -1,6 +1,7 @@
 using Faaz.Services.Consultant.Domain.Entities;
 using Faaz.Services.Consultant.Infrastructure.Interfaces;
 using Faaz.Services.Consultant.WebHost.Features.ConsultantApplication.DTOs;
+using Faaz.SharedKernel.Abstractions;
 using Faaz.SharedKernel.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -29,12 +30,12 @@ internal sealed class InitialiseApplicationCommandHandler : IRequestHandler<Init
     private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
 
     private readonly IConsultantApplicationServices _appServices;
-    private readonly IFileStorageService _fileStorage;
+    private readonly Faaz.SharedKernel.Abstractions.IFileStorageService _fileStorage;
     private readonly ILogger<InitialiseApplicationCommandHandler> _logger;
 
     public InitialiseApplicationCommandHandler(
         IConsultantApplicationServices appServices,
-        IFileStorageService fileStorage,
+        Faaz.SharedKernel.Abstractions.IFileStorageService fileStorage,
         ILogger<InitialiseApplicationCommandHandler> logger)
     {
         _appServices = appServices;
@@ -100,8 +101,6 @@ internal sealed class InitialiseApplicationCommandHandler : IRequestHandler<Init
         InitialiseApplicationDto dto,
         CancellationToken ct)
     {
-        var subFolder = $"applications/{application.Id}";
-
         for (int i = 0; i < dto.Files!.Count; i++)
         {
             var file = dto.Files[i];
@@ -122,8 +121,8 @@ internal sealed class InitialiseApplicationCommandHandler : IRequestHandler<Init
                 ? dto.DocumentTypes[i]!.Value
                 : ApplicationDocumentType.OtherSupportingDocument;
 
-            var relativePath = await _fileStorage.SaveAsync(
-                file.OpenReadStream(), file.FileName, file.ContentType, subFolder, ct);
+            var relativePath = await _fileStorage.UploadAsync(
+                file.OpenReadStream(), file.FileName, FileCategory.Applications, ct);
 
             // Add directly to the collection before EF Core tracking begins
             application.Documents.Add(new ConsultantApplicationDocument

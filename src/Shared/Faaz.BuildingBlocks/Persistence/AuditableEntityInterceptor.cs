@@ -65,8 +65,7 @@ public sealed class AuditableEntityInterceptor : SaveChangesInterceptor
             }
         }
 
-        // SrNo is a DB IDENTITY column — SQL Server rejects any UPDATE that includes it.
-        // ValueGeneratedOnAdd() suppresses INSERT but not UPDATE; fix that here for all entities.
+        // SrNo is set on INSERT only — never update it once persisted.
         foreach (var entry in context.ChangeTracker.Entries())
         {
             if (entry.State != EntityState.Modified) continue;
