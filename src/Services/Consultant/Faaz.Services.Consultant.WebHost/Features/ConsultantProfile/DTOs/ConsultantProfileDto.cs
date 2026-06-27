@@ -53,3 +53,25 @@ public class BlockedDateDto
     public DateOnly Date { get; set; }
     public string? Reason { get; set; }
 }
+
+public class ConsultantProfileSummaryDto
+{
+    public Guid    UserId               { get; set; }
+    public Guid    ProfileId            { get; set; }
+    public string  DisplayName          { get; set; } = string.Empty;
+    public string  CurrentRole          { get; set; } = string.Empty;
+    public string  Institution          { get; set; } = string.Empty;
+    public string? ProfessionalPhotoUrl { get; set; }
+    public string[] SubjectAreas        { get; set; } = [];
+    public int     YearsOfExperience    { get; set; }
+    public decimal MinPriceGbp          { get; set; }
+    public List<SessionTypeSummaryDto> SessionTypes { get; set; } = [];
+}
+
+public class SessionTypeSummaryDto
+{
+    public Guid    Id              { get; set; }
+    public string  Name            { get; set; } = string.Empty;
+    public int     DurationMinutes { get; set; }
+    public decimal PriceGbp        { get; set; }
+}

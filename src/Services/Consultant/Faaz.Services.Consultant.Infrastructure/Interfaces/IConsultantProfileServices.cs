@@ -10,6 +10,13 @@ public interface IConsultantProfileServices
     // Full fetch with SessionTypes + AvailabilitySlots. Use for pricing/availability writes and all reads.
     Task<ConsultantProfile?> GetByUserIdWithCollectionsAsync(Guid userId, CancellationToken ct = default);
 
+    // Fetch by profile ID (not userId). Used by internal service-to-service calls.
+    Task<ConsultantProfile?> GetByIdWithCollectionsAsync(Guid profileId, CancellationToken ct = default);
+
+    // List all active profiles for student browsing.
+    Task<(IReadOnlyList<ConsultantProfile> Items, int Total)> GetAllActiveAsync(
+        string? subjectFilter, int page, int pageSize, CancellationToken ct = default);
+
     Task<ConsultantProfile?> GetByApplicationIdAsync(Guid applicationId, CancellationToken ct = default);
     Task<bool> ExistsForUserAsync(Guid userId, CancellationToken ct = default);
     Task AddAsync(ConsultantProfile profile, CancellationToken ct = default);

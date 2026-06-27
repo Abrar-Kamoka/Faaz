@@ -1,10 +1,10 @@
-using Faaz.Services.Notification.Domain.Entities;
+﻿using Faaz.Services.Notification.Domain.Entities;
 using Faaz.Services.Notification.Infrastructure.Interfaces;
 using Faaz.SharedKernel.IntegrationEvents;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
-using static Faaz.Services.Notification.Domain.CommonEnums;
+using static Faaz.Services.Notification.Domain.NotificationEnums;
 
 namespace Faaz.Services.Notification.WebHost.Consumers;
 
@@ -55,3 +55,4 @@ public class ConsultantRevisionRequestedConsumer : IConsumer<ConsultantRevisionR
         _logger.LogInformation("Revision request email sent for consultant {UserId}", msg.UserId);
     }
 }
+

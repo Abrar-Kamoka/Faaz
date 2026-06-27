@@ -32,6 +32,14 @@ internal sealed class ConsultantProfileManager : IConsultantProfileServices
             .FirstOrDefaultAsync(p => p.UserId == userId, ct);
     }
 
+    public Task<ConsultantProfile?> GetByIdWithCollectionsAsync(Guid profileId, CancellationToken ct)
+    {
+        return _db.ConsultantProfiles
+            .Include(p => p.SessionTypes)
+            .Include(p => p.AvailabilitySlots)
+            .FirstOrDefaultAsync(p => p.Id == profileId, ct);
+    }
+
     public Task<ConsultantProfile?> GetByApplicationIdAsync(Guid applicationId, CancellationToken ct)
     {
         return _db.ConsultantProfiles.FirstOrDefaultAsync(p => p.ApplicationId == applicationId, ct);
@@ -55,6 +63,28 @@ internal sealed class ConsultantProfileManager : IConsultantProfileServices
     public async Task AddAvailabilitySlotAsync(ConsultantAvailabilitySlot slot, CancellationToken ct)
     {
         await _db.ConsultantAvailabilitySlots.AddAsync(slot, ct);
+    }
+
+    public async Task<(IReadOnlyList<ConsultantProfile> Items, int Total)> GetAllActiveAsync(
+        string? subjectFilter, int page, int pageSize, CancellationToken ct)
+    {
+        var query = _db.ConsultantProfiles
+            .Include(p => p.SessionTypes.Where(s => !s.IsDeleted && s.IsActive))
+            .Include(p => p.AvailabilitySlots.Where(s => !s.IsDeleted && !s.IsBlockedDate))
+            .Where(p => p.IsActive && !p.IsDeleted)
+            .AsNoTracking();
+
+        var all = await query.OrderBy(p => p.DisplayName).ToListAsync(ct);
+
+        if (!string.IsNullOrWhiteSpace(subjectFilter))
+        {
+            var filter = subjectFilter.Trim().ToLowerInvariant();
+            all = all.Where(p => p.SubjectAreas.Any(s => s.ToLowerInvariant().Contains(filter))).ToList();
+        }
+
+        var total = all.Count;
+        var items = all.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return (items, total);
     }
 
     public Task SaveChangesAsync(CancellationToken ct)

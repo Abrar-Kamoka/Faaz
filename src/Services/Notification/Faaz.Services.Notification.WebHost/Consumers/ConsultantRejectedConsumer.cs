@@ -1,10 +1,10 @@
-using Faaz.Services.Notification.Domain.Entities;
+﻿using Faaz.Services.Notification.Domain.Entities;
 using Faaz.Services.Notification.Infrastructure.Interfaces;
 using Faaz.SharedKernel.IntegrationEvents;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
-using static Faaz.Services.Notification.Domain.CommonEnums;
+using static Faaz.Services.Notification.Domain.NotificationEnums;
 
 namespace Faaz.Services.Notification.WebHost.Consumers;
 
@@ -58,3 +58,4 @@ public class ConsultantRejectedConsumer : IConsumer<ConsultantRejectedEvent>
         _logger.LogInformation("Rejection email sent for consultant {Email}", msg.Email);
     }
 }
+

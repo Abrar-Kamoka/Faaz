@@ -1,4 +1,4 @@
-using Faaz.Services.Notification.Domain.Entities;
+﻿using Faaz.Services.Notification.Domain.Entities;
 using Faaz.Services.Notification.Infrastructure.Interfaces;
 using Faaz.Services.Notification.WebHost.Hubs;
 using Faaz.SharedKernel.IntegrationEvents;
@@ -6,7 +6,7 @@ using MassTransit;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
-using static Faaz.Services.Notification.Domain.CommonEnums;
+using static Faaz.Services.Notification.Domain.NotificationEnums;
 
 namespace Faaz.Services.Notification.WebHost.Consumers;
 
@@ -34,7 +34,7 @@ public class ConsultantApprovedConsumer : IConsumer<ConsultantApprovedEvent>
         var msg = context.Message;
         var ct  = context.CancellationToken;
 
-        var subject = "Congratulations — your Faaz profile is approved!";
+        var subject = "Congratulations â€” your Faaz profile is approved!";
         var body = $@"<p>Hi {msg.FirstName},</p>
             <p>Your consultant profile has been approved.</p>
             <p><a href=""https://localhost:3000/consultant/dashboard"">Go to your dashboard</a></p>";
@@ -63,3 +63,4 @@ public class ConsultantApprovedConsumer : IConsumer<ConsultantApprovedEvent>
         _logger.LogInformation("Approval email + SignalR push sent for consultant {UserId}", msg.UserId);
     }
 }
+

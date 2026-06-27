@@ -1,6 +1,6 @@
 namespace Faaz.Services.Notification.Domain;
 
-public static class CommonEnums
+public static class NotificationEnums
 {
     public enum NotificationChannel
     {

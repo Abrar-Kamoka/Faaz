@@ -22,6 +22,15 @@ public class ConsultantProfileController : FaazApiController
         _mediator = mediator;
     }
 
+    [HttpGet]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListProfiles([FromQuery] ListConsultantProfilesQuery query, CancellationToken ct)
+    {
+        var (items, total) = await _mediator.Send(query, ct);
+        return Ok(ApiResponse.Ok(new { Items = items, TotalCount = total, query.Page, query.PageSize }));
+    }
+
     [HttpGet("{userId:guid}")]
     [Authorize(Policy = "ConsultantSetupOrActive")]
     [ProducesResponseType(typeof(ApiResponse<ConsultantProfileDto>), StatusCodes.Status200OK)]

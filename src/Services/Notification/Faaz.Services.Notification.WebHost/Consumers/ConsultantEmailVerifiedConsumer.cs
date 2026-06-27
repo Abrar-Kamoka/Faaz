@@ -1,9 +1,9 @@
-using Faaz.Services.Notification.Domain.Entities;
+﻿using Faaz.Services.Notification.Domain.Entities;
 using Faaz.Services.Notification.Infrastructure.Interfaces;
 using Faaz.SharedKernel.IntegrationEvents;
 using MassTransit;
 using Microsoft.Extensions.Logging;
-using static Faaz.Services.Notification.Domain.CommonEnums;
+using static Faaz.Services.Notification.Domain.NotificationEnums;
 
 namespace Faaz.Services.Notification.WebHost.Consumers;
 
@@ -41,3 +41,4 @@ public class ConsultantEmailVerifiedConsumer : IConsumer<ConsultantEmailVerified
         _logger.LogInformation("In-app notification created for consultant email verification {UserId}", msg.UserId);
     }
 }
+

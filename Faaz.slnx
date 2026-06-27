@@ -22,6 +22,16 @@
     <Project Path="src/Services/Notification/Faaz.Services.Notification.Infrastructure/Faaz.Services.Notification.Infrastructure.csproj" />
     <Project Path="src/Services/Notification/Faaz.Services.Notification.WebHost/Faaz.Services.Notification.WebHost.csproj" />
   </Folder>
+  <Folder Name="/Services/Booking/">
+    <Project Path="src/Services/Booking/Faaz.Services.Booking.Domain/Faaz.Services.Booking.Domain.csproj" />
+    <Project Path="src/Services/Booking/Faaz.Services.Booking.Infrastructure/Faaz.Services.Booking.Infrastructure.csproj" />
+    <Project Path="src/Services/Booking/Faaz.Services.Booking.WebHost/Faaz.Services.Booking.WebHost.csproj" />
+  </Folder>
+  <Folder Name="/Services/Payment/">
+    <Project Path="src/Services/Payment/Faaz.Services.Payment.Domain/Faaz.Services.Payment.Domain.csproj" />
+    <Project Path="src/Services/Payment/Faaz.Services.Payment.Infrastructure/Faaz.Services.Payment.Infrastructure.csproj" />
+    <Project Path="src/Services/Payment/Faaz.Services.Payment.WebHost/Faaz.Services.Payment.WebHost.csproj" />
+  </Folder>
   <Folder Name="/Shared/">
     <Project Path="src/Shared/Faaz.BuildingBlocks/Faaz.BuildingBlocks.csproj" />
     <Project Path="src/Shared/Faaz.SharedKernel/Faaz.SharedKernel.csproj" />

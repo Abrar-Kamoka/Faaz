@@ -1,5 +1,5 @@
-using Faaz.SharedKernel.Entities;
-using static Faaz.Services.Notification.Domain.CommonEnums;
+﻿using Faaz.SharedKernel.Entities;
+using static Faaz.Services.Notification.Domain.NotificationEnums;
 
 namespace Faaz.Services.Notification.Domain.Entities;
 
@@ -24,3 +24,4 @@ public class NotificationLog : BaseSoftDeleteModel
     public string?            ExtraField1 { get; set; }
     public string?            ExtraField2 { get; set; }
 }
+

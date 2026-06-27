@@ -24,7 +24,7 @@
   </ItemGroup>
   <ItemGroup Label="JWT / Auth">
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
-    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.4.0" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
   </ItemGroup>
   <ItemGroup Label="Logging">
     <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
@@ -53,7 +53,7 @@
     <PackageVersion Include="RT.Comb" Version="4.0.0" />
   </ItemGroup>
   <ItemGroup Label="JWT Tokens">
-    <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.4.0" />
+    <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.14.0" />
   </ItemGroup>
   <ItemGroup Label="Mapping DI">
     <PackageVersion Include="Mapster.DependencyInjection" Version="10.0.0" />
@@ -69,5 +69,12 @@
   <ItemGroup Label="SignalR Redis Backplane">
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.0" />
     <PackageVersion Include="StackExchange.Redis" Version="2.8.16" />
+  </ItemGroup>
+  <ItemGroup Label="Phase 3 — Video / Payments / Background Jobs">
+    <PackageVersion Include="Livekit.Server.Sdk.Dotnet" Version="1.2.2" />
+    <PackageVersion Include="Stripe.net" Version="47.2.0" />
+    <PackageVersion Include="Hangfire.Core" Version="1.8.14" />
+    <PackageVersion Include="Hangfire.SqlServer" Version="1.8.14" />
+    <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.14" />
   </ItemGroup>
 </Project>

@@ -9,3 +9,9 @@ public record SessionNoShowEvent(Guid BookingId, bool StudentJoined, bool Consul
 public record PayoutReleasedEvent(Guid BookingId, Guid ConsultantId, decimal NetAmount);
 public record PayoutFailedEvent(Guid BookingId, Guid ConsultantId, decimal Amount, string FailureReason);
 public record RefundIssuedEvent(Guid BookingId, Guid StudentId, decimal TotalRefunded, string Reason);
+public record RefundAppealApprovedEvent(
+    Guid    BookingId,
+    Guid    AppealId,
+    Guid    StudentUserId,
+    decimal RefundAmountGbp,
+    Guid    ApprovedByAdminId);

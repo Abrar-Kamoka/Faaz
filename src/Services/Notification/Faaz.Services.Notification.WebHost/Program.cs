@@ -2,7 +2,6 @@ using Faaz.BuildingBlocks.Extensions;
 using Faaz.Services.Notification.Infrastructure.DatabaseContext;
 using Faaz.Services.Notification.Infrastructure.Extensions;
 using Faaz.Services.Notification.WebHost.Consumers;
-using Faaz.Services.Notification.WebHost.Consumers.Phase3Stubs;
 using Faaz.Services.Notification.WebHost.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -111,7 +110,7 @@ try
         x.AddConsumer<ConsultantRevisionRequestedConsumer>();
         x.AddConsumer<SendVerificationEmailConsumer>();
         x.AddConsumer<SendPasswordResetEmailConsumer>();
-        // Phase 3 stubs
+        // Phase 3
         x.AddConsumer<BookingRequestReceivedConsumer>();
         x.AddConsumer<BookingConfirmedConsumer>();
         x.AddConsumer<BookingCancelledConsumer>();
@@ -121,6 +120,8 @@ try
         x.AddConsumer<PayoutReleasedConsumer>();
         x.AddConsumer<PayoutFailedConsumer>();
         x.AddConsumer<RefundIssuedConsumer>();
+        x.AddConsumer<PaymentCapturedConsumer>();
+        x.AddConsumer<SessionCompletedConsumer>();
     });
 
     builder.Services.AddSwaggerGen(opts =>

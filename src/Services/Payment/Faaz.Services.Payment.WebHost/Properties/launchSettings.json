@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Faaz.Services.Payment.WebHost": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:55135;http://localhost:55235"
+    }
+  }
+}
