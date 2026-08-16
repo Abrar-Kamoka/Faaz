@@ -67,18 +67,10 @@ src/Services/Identity/Faaz.Services.Identity/appsettings.Development.json
 # ─────────────────────────────────────────────
 
 # ─────────────────────────────────────────────
-#  Frontend — Next.js
+#  Frontend — now its own separate git repository
+#  (D:\Zeperates\Newfolder\UniConsult\Frontend\faaz)
 # ─────────────────────────────────────────────
-src/Frontend/.next/
-src/Frontend/out/
-src/Frontend/node_modules/
-src/Frontend/.env.local
-src/Frontend/.env.development.local
-src/Frontend/.env.test.local
-src/Frontend/.env.production.local
-src/Frontend/npm-debug.log*
-src/Frontend/yarn-debug.log*
-src/Frontend/yarn-error.log*
+Frontend/
 
 # ─────────────────────────────────────────────
 #  Claude Code

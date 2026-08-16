@@ -27,14 +27,15 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
         private readonly IRefundServices _refundServices;
         private readonly IStripeWebhookEventServices _webhookServices;
         private readonly IPaymentGateway _gateway;
+        private readonly IPaymentConsultantClient _consultantClient;
         private readonly IPublishEndpoint _publishEndpoint;
         private readonly IConfiguration _config;
         private readonly ILogger<ProcessStripeWebhookCommandHandler> _logger;
 
         public ProcessStripeWebhookCommandHandler(
             IPaymentServices ps, IRefundServices rs, IStripeWebhookEventServices ws,
-            IPaymentGateway gw, IPublishEndpoint pub, IConfiguration config, ILogger<ProcessStripeWebhookCommandHandler> l)
-        { _paymentServices = ps; _refundServices = rs; _webhookServices = ws; _gateway = gw; _publishEndpoint = pub; _config = config; _logger = l; }
+            IPaymentGateway gw, IPaymentConsultantClient cc, IPublishEndpoint pub, IConfiguration config, ILogger<ProcessStripeWebhookCommandHandler> l)
+        { _paymentServices = ps; _refundServices = rs; _webhookServices = ws; _gateway = gw; _consultantClient = cc; _publishEndpoint = pub; _config = config; _logger = l; }
 
         public async Task Handle(ProcessStripeWebhookCommand command, CancellationToken ct)
         {
@@ -89,6 +90,9 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
         {
             switch (stripeEvent.Type)
             {
+                case "payment_intent.amount_capturable_updated":
+                    await HandlePaymentIntentAuthorizedAsync((PaymentIntent)stripeEvent.Data.Object, ct);
+                    break;
                 case "payment_intent.succeeded":
                     await HandlePaymentIntentSucceededAsync((PaymentIntent)stripeEvent.Data.Object, ct);
                     break;
@@ -98,10 +102,24 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
                 case "charge.refunded":
                     await HandleChargeRefundedAsync((Charge)stripeEvent.Data.Object, ct);
                     break;
+                case "account.updated":
+                    await HandleAccountUpdatedAsync((Account)stripeEvent.Data.Object, ct);
+                    break;
                 default:
                     _logger.LogDebug("Unhandled Stripe event type: {Type}", stripeEvent.Type);
                     break;
             }
+        }
+
+        // Manual-capture intent reached requires_capture — the student's card was successfully
+        // authorized (funds held). This is the earliest reliable signal that checkout finished;
+        // payment_intent.succeeded doesn't fire until the platform later captures on acceptance.
+        private async Task HandlePaymentIntentAuthorizedAsync(PaymentIntent intent, CancellationToken ct)
+        {
+            var payment = await _paymentServices.GetByStripePaymentIntentIdAsync(intent.Id, ct);
+            if (payment is null) { _logger.LogWarning("No payment found for intent {Id}", intent.Id); return; }
+
+            await _publishEndpoint.Publish(new PaymentAuthorizedEvent(payment.BookingId, intent.Id, payment.StudentUserId, payment.Amount), ct);
         }
 
         private async Task HandlePaymentIntentSucceededAsync(PaymentIntent intent, CancellationToken ct)
@@ -155,6 +173,14 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
 
             payment.Status = PaymentStatus.Refunded;
             await _paymentServices.SaveChangesAsync(ct);
+        }
+
+        // Authoritative signal that a consultant's Connect onboarding/capabilities changed — syncs
+        // the flags Consultant service uses to gate profile completeness and public bookability.
+        private async Task HandleAccountUpdatedAsync(Account account, CancellationToken ct)
+        {
+            await _consultantClient.UpdateStripeConnectAccountStatusAsync(
+                account.Id, account.DetailsSubmitted, account.ChargesEnabled, ct);
         }
     }
 }

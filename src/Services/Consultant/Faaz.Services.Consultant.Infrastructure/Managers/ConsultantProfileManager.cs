@@ -45,6 +45,19 @@ internal sealed class ConsultantProfileManager : IConsultantProfileServices
         return _db.ConsultantProfiles.FirstOrDefaultAsync(p => p.ApplicationId == applicationId, ct);
     }
 
+    // Must include SessionTypes/AvailabilitySlots — this is the fetch behind the Stripe
+    // "account.updated" webhook path (see ConsultantInternalApiController.SetStripeStatus), which
+    // runs TryAutoActivateAsync straight after. Without these included, ProfileCompletenessChecker
+    // sees empty collections regardless of what's actually saved and pricing/availability always
+    // fail, so a profile can never auto-activate on the Stripe step even once genuinely complete.
+    public Task<ConsultantProfile?> GetByStripeAccountIdAsync(string stripeAccountId, CancellationToken ct)
+    {
+        return _db.ConsultantProfiles
+            .Include(p => p.SessionTypes)
+            .Include(p => p.AvailabilitySlots)
+            .FirstOrDefaultAsync(p => p.StripeAccountId == stripeAccountId, ct);
+    }
+
     public Task<bool> ExistsForUserAsync(Guid userId, CancellationToken ct)
     {
         return _db.ConsultantProfiles.AnyAsync(p => p.UserId == userId, ct);
@@ -66,7 +79,8 @@ internal sealed class ConsultantProfileManager : IConsultantProfileServices
     }
 
     public async Task<(IReadOnlyList<ConsultantProfile> Items, int Total)> GetAllActiveAsync(
-        string? subjectFilter, int page, int pageSize, CancellationToken ct)
+        string? subjectFilter, string? search, int? sessionType, int? studyLevel, bool? verifiedOnly,
+        int page, int pageSize, CancellationToken ct)
     {
         var query = _db.ConsultantProfiles
             .Include(p => p.SessionTypes.Where(s => !s.IsDeleted && s.IsActive))
@@ -78,9 +92,29 @@ internal sealed class ConsultantProfileManager : IConsultantProfileServices
 
         if (!string.IsNullOrWhiteSpace(subjectFilter))
         {
-            var filter = subjectFilter.Trim().ToLowerInvariant();
-            all = all.Where(p => p.SubjectAreas.Any(s => s.ToLowerInvariant().Contains(filter))).ToList();
+            var f = subjectFilter.Trim().ToLowerInvariant();
+            all = all.Where(p => (p.SubjectAreas ?? []).Any(s => s.ToLowerInvariant().Contains(f))).ToList();
         }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLowerInvariant();
+            all = all.Where(p =>
+                p.DisplayName.ToLowerInvariant().Contains(term) ||
+                p.CurrentRole.ToLowerInvariant().Contains(term) ||
+                p.Institution.ToLowerInvariant().Contains(term) ||
+                (p.SubjectAreas ?? []).Any(s => s.ToLowerInvariant().Contains(term))
+            ).ToList();
+        }
+
+        if (sessionType.HasValue)
+            all = all.Where(p => (p.ServicesOffered ?? []).Contains(sessionType.Value)).ToList();
+
+        if (studyLevel.HasValue)
+            all = all.Where(p => (p.StudyLevelsOffered ?? []).Contains(studyLevel.Value)).ToList();
+
+        if (verifiedOnly == true)
+            all = all.Where(p => p.IsFeatured).ToList();
 
         var total = all.Count;
         var items = all.Skip((page - 1) * pageSize).Take(pageSize).ToList();
@@ -90,6 +124,46 @@ internal sealed class ConsultantProfileManager : IConsultantProfileServices
     public Task SaveChangesAsync(CancellationToken ct)
     {
         return _db.SaveChangesAsync(ct);
+    }
+
+    public async Task<(IReadOnlyList<ConsultantProfile> Items, int Total)> GetAllForAdminAsync(
+        int page, int pageSize, CancellationToken ct)
+    {
+        var query = _db.ConsultantProfiles
+            .IgnoreQueryFilters()
+            .Include(p => p.Application)
+            .AsNoTracking();
+
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .OrderByDescending(p => p.UpdatedAt ?? p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+        return (items, total);
+    }
+
+    public Task<ConsultantProfile?> GetByUserIdWithApplicationAsync(Guid userId, CancellationToken ct)
+        => _db.ConsultantProfiles
+              .Include(p => p.Application)
+              .FirstOrDefaultAsync(p => p.UserId == userId, ct);
+
+    public async Task<(IReadOnlyList<ConsultantProfile> Items, int Total)> GetFeaturedAsync(
+        int page, int pageSize, CancellationToken ct)
+    {
+        var query = _db.ConsultantProfiles
+            .IgnoreQueryFilters()
+            .Include(p => p.Application)
+            .Where(p => p.IsFeatured && !p.IsDeleted)
+            .AsNoTracking();
+
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .OrderBy(p => p.DisplayName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+        return (items, total);
     }
 
     // Call BEFORE SaveChangesAsync — marks profile active in memory so the caller's save

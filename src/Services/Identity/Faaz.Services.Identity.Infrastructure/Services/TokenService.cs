@@ -37,7 +37,7 @@ internal sealed class TokenService : ITokenService
         _accessTokenMinutes = int.TryParse(config["Jwt:AccessTokenMinutes"], out var m) ? m : 15;
     }
 
-    public string GenerateAccessToken(ApplicationUser user, out string jti)
+    public string GenerateAccessToken(ApplicationUser user, out string jti, IReadOnlyList<string>? permissions = null)
     {
         jti = Guid.NewGuid().ToString();
 
@@ -52,6 +52,13 @@ internal sealed class TokenService : ITokenService
 
         if (user.Role == UserRole.Consultant && user.ConsultantApplicationStatus.HasValue)
             claims.Add(new("consultant_status", ((int)user.ConsultantApplicationStatus.Value).ToString()));
+
+        // Additive, fine-grained gate on top of "role" — existing [Authorize(Policy = "AdminOnly")]
+        // checks are untouched and keep working purely off the role claim above. Only a NEW policy
+        // that explicitly opts into RequirePermission(...) will ever look at this.
+        if (permissions is { Count: > 0 })
+            foreach (var permission in permissions)
+                claims.Add(new("permission", permission));
 
         var creds = new SigningCredentials(_privateKey, SecurityAlgorithms.RsaSha256);
         var expires = DateTime.UtcNow.AddMinutes(_accessTokenMinutes);

@@ -12,6 +12,7 @@ public sealed record ApplicationSubmissionRequest
     public required string PhoneNumber { get; init; }
     public required bool IsUkBased { get; init; }
     public required string CurrentRole { get; init; }
+    public string? Institution { get; init; }
     public required string ExpertiseArea { get; init; }
     public required int YearsOfExperience { get; init; }
     public DateOnly? DateOfBirth { get; init; }
@@ -22,6 +23,7 @@ public sealed record ApplicationSubmissionRequest
     public string? PrimaryLanguage { get; init; }
     public string? PersonalStatement { get; init; }
     public ConsultationMode? ConsultationMode { get; init; }
+    public string? ReferralSource { get; init; }
     public IReadOnlyList<DocumentSubmission>? Documents { get; init; }
 }
 

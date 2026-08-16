@@ -12,6 +12,7 @@ public class RegisterConsultantDto
     public required string PhoneNumber { get; set; }
     public required bool IsUkBased { get; set; }
     public required string CurrentRole { get; set; }
+    public string? Institution { get; set; }
     public required string ExpertiseArea { get; set; }
     public required int YearsOfExperience { get; set; }
     public DateOnly? DateOfBirth { get; set; }
@@ -22,6 +23,7 @@ public class RegisterConsultantDto
     public string? PrimaryLanguage { get; set; }
     public string? PersonalStatement { get; set; }
     public ConsultationMode? ConsultationMode { get; set; }
+    public string? ReferralSource { get; set; }
 
     // Parallel lists — Files[i] corresponds to DocumentTypes[i]. Both are optional.
     // DocumentTypes uses nullable enum so empty form values bind as null instead of a parse error.

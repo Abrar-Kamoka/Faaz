@@ -66,6 +66,7 @@ internal sealed class InitialiseApplicationCommandHandler : IRequestHandler<Init
             PhoneNumber          = dto.PhoneNumber,
             IsUkBased            = dto.IsUkBased,
             CurrentRole          = dto.CurrentRole,
+            Institution          = dto.Institution,
             ExpertiseArea        = dto.ExpertiseArea,
             YearsOfExperience    = dto.YearsOfExperience,
             DateOfBirth          = dto.DateOfBirth,
@@ -76,6 +77,7 @@ internal sealed class InitialiseApplicationCommandHandler : IRequestHandler<Init
             PrimaryLanguage      = dto.PrimaryLanguage,
             PersonalStatement    = dto.PersonalStatement,
             ConsultationMode     = dto.ConsultationMode,
+            ReferralSource       = dto.ReferralSource,
             SubmittedAt          = DateTime.UtcNow
         };
 

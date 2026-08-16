@@ -34,37 +34,36 @@ internal sealed class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCom
 
     public async Task Handle(VerifyEmailCommand command, CancellationToken ct)
     {
-        var tokenHash = HashToken(command.PostModel.Token);
+        var token = command.PostModel.Token?.Trim();
+        if (string.IsNullOrEmpty(token))
+            throw BusinessRuleException.Error("The verification token is invalid or has expired.", "email-verification.invalid");
 
         var user = _userManager.Users
-            .FirstOrDefault(u => u.EmailVerificationToken == tokenHash);
+            .FirstOrDefault(u => u.EmailVerificationToken == token);
 
         if (user is null || user.EmailVerificationTokenExpiry < DateTime.UtcNow)
             throw BusinessRuleException.Error("The verification token is invalid or has expired.", "email-verification.invalid");
 
         if (!user.IsEmailVerified)
         {
-            user.IsEmailVerified = true;
-            user.EmailVerificationToken = null;
+            user.IsEmailVerified              = true;
+            user.EmailVerificationToken       = null;
             user.EmailVerificationTokenExpiry = null;
 
             if (user.Role == UserRole.Consultant)
                 user.ConsultantApplicationStatus = ConsultantApplicationStatus.SettingUpProfile;
+            else
+                // Students have no further approval gate — email verification is the last step
+                // before the account is genuinely usable, so Status should say so. Consultants stay
+                // PendingEmailVerification here; their own approval flow moves Status separately.
+                user.Status = UserStatus.Active;
 
             await _userManager.UpdateAsync(user);
         }
 
-        // Publish event — Consultant service consumer handles both SetApplicationUnderReview
-        // and CreateProfileStub in a single idempotent consumer.
         if (user.Role == UserRole.Consultant)
             await _publishEndpoint.Publish(new ConsultantEmailVerifiedEvent(user.Id), ct);
 
         _logger.LogInformation("Email verified for UserId: {UserId}", user.Id);
-    }
-
-    private static string HashToken(string token)
-    {
-        var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token));
-        return Microsoft.IdentityModel.Tokens.Base64UrlEncoder.Encode(bytes);
     }
 }

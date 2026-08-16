@@ -30,7 +30,12 @@ public class ConsultantProfile : BaseSoftDeleteModel
     public int MaxAdvanceBookingDays { get; set; } = 60;
     public bool IsProfileComplete { get; set; } = false;
     public bool IsActive { get; set; } = false;
+    public bool IsFeatured { get; set; } = false;
     public string? StripeAccountId { get; set; }
+    // Synced reactively from Stripe's account.updated webhook (Payment service) — never queried
+    // live from Stripe on this service's own request path, per Stripe's recommended integration pattern.
+    public bool IsStripeDetailsSubmitted { get; set; } = false;
+    public bool IsStripeChargesEnabled { get; set; } = false;
     public string? Remarks { get; set; }
     public string? ExtraField1 { get; set; }
     public string? ExtraField2 { get; set; }

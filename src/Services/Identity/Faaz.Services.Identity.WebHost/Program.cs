@@ -1,7 +1,6 @@
 using Faaz.BuildingBlocks.Extensions;
 using Faaz.Services.Identity.Infrastructure.DatabaseContext;
 using Faaz.Services.Identity.Infrastructure.Extensions;
-using Faaz.Services.Identity.WebHost.DevEmail;
 using Faaz.Services.Identity.WebHost.Extensions;
 using Faaz.Services.Identity.WebHost.Seeding;
 using Microsoft.AspNetCore.RateLimiting;
@@ -27,23 +26,20 @@ try
 
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddFaazOpenTelemetry(builder.Configuration, "faaz-identity");
     builder.Services.AddIdentityInfrastructure(builder.Configuration, typeof(Program).Assembly, builder.Environment);
     builder.Services.AddIdentityHttpClients(builder.Configuration, builder.Environment);
-    builder.Services.AddFaazRabbitMq(builder.Configuration, builder.Environment, x =>
-    {
-        if (builder.Environment.IsDevelopment())
-        {
-            // In-memory bus: consume events in-process so emails reach MailHog/console without RabbitMQ.
-            x.AddConsumer<StudentRegisteredDevConsumer>();
-            x.AddConsumer<StudentProfileCreatorDevConsumer>();
-            x.AddConsumer<SendVerificationEmailDevConsumer>();
-            x.AddConsumer<SendPasswordResetEmailDevConsumer>();
-            x.AddConsumer<ConsultantEmailVerifiedDevConsumer>();
-            x.AddConsumer<ConsultantApprovedDevConsumer>();
-            x.AddConsumer<ConsultantRejectedDevConsumer>();
-            x.AddConsumer<ConsultantRevisionRequestedDevConsumer>();
-        }
-    });
+    // Identity only publishes these events (StudentRegistered, SendVerificationEmail,
+    // ConsultantEmailVerified, ConsultantApproved/Rejected/RevisionRequested, ...) — it never
+    // consumes its own. Notification, Consultant, and Student services already register real,
+    // unconditional consumers for all of them. There used to be a set of "dev" consumers registered
+    // here too, from back when Development used an in-memory MassTransit transport that couldn't
+    // cross process boundaries (so Identity had to handle its own events locally to get any email
+    // at all). AddFaazRabbitMq now always connects to the real broker regardless of environment, so
+    // those dev consumers had become pure duplicates of the real ones — every event fired twice
+    // (e.g. two verification emails) whenever Identity ran with ASPNETCORE_ENVIRONMENT=Development
+    // alongside the other services.
+    builder.Services.AddFaazRabbitMq(builder.Configuration, builder.Environment, x => { });
 
     // Rate limiting — keyed by remote IP to slow brute-force and enumeration attacks.
     builder.Services.AddRateLimiter(opts =>
@@ -72,6 +68,8 @@ try
         db.Database.Migrate();
         var seederLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("AdminSeeder");
         await AdminSeeder.SeedAsync(scope.ServiceProvider, seederLogger);
+        var rbacLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("RbacSeeder");
+        await RbacSeeder.SeedAsync(scope.ServiceProvider, rbacLogger);
     }
     catch (Exception ex)
     {

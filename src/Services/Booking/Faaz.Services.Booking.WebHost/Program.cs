@@ -23,9 +23,11 @@ try
 
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddFaazOpenTelemetry(builder.Configuration, "faaz-booking");
     builder.Services.AddBookingInfrastructure(builder.Configuration, typeof(Program).Assembly, builder.Environment);
     builder.Services.AddFaazRabbitMq(builder.Configuration, builder.Environment, x =>
     {
+        x.AddConsumer<PaymentAuthorizedConsumer>();
         x.AddConsumer<PaymentCapturedConsumer>();
         x.AddConsumer<PaymentFailedConsumer>();
     });
@@ -81,7 +83,7 @@ try
         "cleanup-expired-slots",
         "maintenance",
         j => j.ExecuteAsync(),
-        "0 * * * *",
+        "*/5 * * * *", // 5 min — the slot hold itself is only 10 min; hourly left it stale far too long
         new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 
     if (app.Environment.IsDevelopment())

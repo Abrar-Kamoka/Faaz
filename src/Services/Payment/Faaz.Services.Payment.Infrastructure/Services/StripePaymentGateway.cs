@@ -44,6 +44,21 @@ internal sealed class StripePaymentGateway : IPaymentGateway
         }
     }
 
+    public async Task<RetrieveIntentResult> RetrievePaymentIntentAsync(string paymentIntentId, CancellationToken ct = default)
+    {
+        try
+        {
+            var service = new PaymentIntentService();
+            var intent  = await service.GetAsync(paymentIntentId, cancellationToken: ct);
+            return new RetrieveIntentResult(true, intent.ClientSecret, intent.Status, null);
+        }
+        catch (StripeException ex)
+        {
+            _logger.LogError(ex, "Stripe retrieve failed for intent {IntentId}", paymentIntentId);
+            return new RetrieveIntentResult(false, null, null, ex.Message);
+        }
+    }
+
     public async Task<CaptureResult> CapturePaymentIntentAsync(string paymentIntentId, CancellationToken ct = default)
     {
         try

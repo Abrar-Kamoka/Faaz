@@ -26,8 +26,8 @@ internal sealed class UpdateProfileBioCommandHandler : IRequestHandler<UpdatePro
             ?? throw new NotFoundException("StudentProfile", command.UserId);
 
         profile.Bio = command.PutModel.Bio;
-        profile.ProfilePhotoUrl = command.PutModel.ProfilePhotoUrl;
-
+        // Photo is owned exclusively by PUT /students/{id}/photo — never touch it here, or every
+        // bio save silently wipes out whatever photo the student just uploaded in the same form.
         profile.UpdateCompleteness();
         await _profileServices.SaveChangesAsync(ct);
     }

@@ -30,6 +30,8 @@ internal sealed class ConsultantProfileConfiguration : IEntityTypeConfiguration<
         builder.Property(p => p.SpecialisedUniversities).HasColumnType("nvarchar(max)");
         builder.Property(p => p.ServicesOffered).HasColumnType("nvarchar(max)");
 
+        builder.Property(p => p.IsFeatured).HasDefaultValue(false);
+
         builder.HasIndex(p => p.UserId).IsUnique().HasDatabaseName("IX_ConsultantProfiles_UserId");
         builder.HasIndex(p => p.ApplicationId).IsUnique().HasDatabaseName("IX_ConsultantProfiles_ApplicationId");
         builder.HasIndex(p => new { p.IsActive, p.IsProfileComplete }).HasDatabaseName("IX_ConsultantProfiles_IsActive_IsProfileComplete");

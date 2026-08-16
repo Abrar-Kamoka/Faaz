@@ -59,6 +59,7 @@ internal sealed class RegisterConsultantCommandHandler : IRequestHandler<Registe
             PhoneNumber        = dto.PhoneNumber,
             IsUkBased          = dto.IsUkBased,
             CurrentRole        = dto.CurrentRole,
+            Institution        = dto.Institution,
             ExpertiseArea      = dto.ExpertiseArea,
             YearsOfExperience  = dto.YearsOfExperience,
             DateOfBirth        = dto.DateOfBirth,
@@ -69,6 +70,7 @@ internal sealed class RegisterConsultantCommandHandler : IRequestHandler<Registe
             PrimaryLanguage    = dto.PrimaryLanguage,
             PersonalStatement  = dto.PersonalStatement,
             ConsultationMode   = dto.ConsultationMode,
+            ReferralSource     = dto.ReferralSource,
             Documents          = documents
         };
 

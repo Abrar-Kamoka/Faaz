@@ -25,6 +25,10 @@ public abstract class FaazApiController : ControllerBase
         if (IsOwner(userId)) return true;
         return User.FindFirstValue("role") == "3";
     }
+
+    protected string? GetCallerEmail() =>
+        User.FindFirstValue(JwtRegisteredClaimNames.Email)
+        ?? User.FindFirstValue(ClaimTypes.Email);
 }
 
 /// <summary>Base for internal (X-Service-Key) endpoints in the Consultant service.</summary>

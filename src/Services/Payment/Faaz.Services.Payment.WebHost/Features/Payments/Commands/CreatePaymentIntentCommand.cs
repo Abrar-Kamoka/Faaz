@@ -26,19 +26,42 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
         private readonly IPaymentConsultantClient _consultantClient;
         private readonly IBookingClient _bookingClient;
         private readonly IPublishEndpoint _publishEndpoint;
+        private readonly IConfiguration _config;
 
         public CreatePaymentIntentCommandHandler(
             IPaymentServices ps, IPromoCodeServices promo, IPaymentGateway gw,
-            IPaymentConsultantClient cc, IBookingClient bc, IPublishEndpoint pub)
-        { _paymentServices = ps; _promoServices = promo; _gateway = gw; _consultantClient = cc; _bookingClient = bc; _publishEndpoint = pub; }
+            IPaymentConsultantClient cc, IBookingClient bc, IPublishEndpoint pub, IConfiguration config)
+        { _paymentServices = ps; _promoServices = promo; _gateway = gw; _consultantClient = cc; _bookingClient = bc; _publishEndpoint = pub; _config = config; }
 
         public async Task<PaymentIntentResultDto> Handle(CreatePaymentIntentCommand command, CancellationToken ct)
         {
             var dto = command.PostModel;
 
             var existing = await _paymentServices.GetByBookingIdAsync(dto.BookingId, ct);
-            if (existing is not null && existing.Status is PaymentStatus.Authorised or PaymentStatus.Captured)
+            if (existing is not null && existing.Status == PaymentStatus.Captured)
                 throw new ConflictException("A payment already exists for this booking.");
+
+            // Resume an abandoned-but-unpaid checkout (student navigated away before confirming card
+            // details) instead of creating a second PaymentIntent and orphaning the first one.
+            if (existing is not null && existing.Status == PaymentStatus.Authorised)
+            {
+                var retrieved = await _gateway.RetrievePaymentIntentAsync(existing.StripePaymentIntentId, ct);
+                if (retrieved.Success && retrieved.Status is not ("succeeded" or "canceled"))
+                {
+                    return new PaymentIntentResultDto
+                    {
+                        PaymentId        = existing.Id,
+                        ClientSecret     = retrieved.ClientSecret!,
+                        IntentId         = existing.StripePaymentIntentId,
+                        Amount           = existing.Amount,
+                        PlatformFee      = existing.PlatformFee,
+                        ConsultantPayout = existing.ConsultantPayout,
+                        Currency         = "gbp"
+                    };
+                }
+                // Stale local state (intent expired/canceled on Stripe's side, e.g. by the slot-expiry
+                // job) — fall through and issue a fresh intent, reusing this same Payment row below.
+            }
 
             var bookingData = await _bookingClient.GetBookingDetailsAsync(dto.BookingId, ct)
                 ?? throw new NotFoundException("Booking", dto.BookingId);
@@ -46,9 +69,12 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
             Guid    consultantUserId = bookingData.ConsultantUserId;
             string? stripeCustomerId = null; // no Stripe Customer ID on student profile; null = anonymous intent
 
-            var connectAccountId = await _consultantClient.GetStripeConnectAccountIdAsync(consultantUserId, ct);
-            if (string.IsNullOrEmpty(connectAccountId))
+            var connectStatus = await _consultantClient.GetStripeConnectStatusAsync(consultantUserId, ct);
+            if (string.IsNullOrEmpty(connectStatus.AccountId))
                 throw BusinessRuleException.Error("Consultant has not connected their Stripe account yet.", "payment.no-connect-account");
+            if (!connectStatus.ChargesEnabled)
+                throw BusinessRuleException.Error("Consultant's payout account setup is incomplete.", "payment.connect-incomplete");
+            var connectAccountId = connectStatus.AccountId;
 
             decimal discount    = 0m;
             string? promoUsed   = null;
@@ -70,8 +96,9 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
                 }
             }
 
-            var finalAmount = Math.Max(bookingAmount - discount, 0m);
-            var platformFee = Math.Round(finalAmount * 0.15m, 2);
+            var commissionRate = decimal.TryParse(_config["Stripe:CommissionRate"], out var rate) ? rate : 0.15m;
+            var finalAmount    = Math.Max(bookingAmount - discount, 0m);
+            var platformFee    = Math.Round(finalAmount * commissionRate, 2);
 
             var result = await _gateway.CreatePaymentIntentAsync(
                 finalAmount, stripeCustomerId, connectAccountId, platformFee, dto.BookingId.ToString(), ct);
@@ -79,31 +106,48 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
             if (!result.Success || result.PaymentIntentId is null)
                 throw BusinessRuleException.Error($"Payment creation failed: {result.ErrorMessage}", "payment.intent-failed");
 
-            var srNo = await _paymentServices.NewSerialNumberAsync(ct);
-            var payment = new Payment
+            Payment payment;
+            if (existing is not null)
             {
-                SrNo                  = srNo,
-                BookingId             = dto.BookingId,
-                StudentUserId         = command.StudentUserId,
-                ConsultantUserId      = consultantUserId,
-                StripePaymentIntentId = result.PaymentIntentId,
-                Amount                = finalAmount,
-                PlatformFee           = platformFee,
-                ConsultantPayout      = finalAmount - platformFee,
-                DiscountAmount        = discount,
-                PromoCodeUsed         = promoUsed,
-                Status                = PaymentStatus.Authorised
-            };
-            await _paymentServices.AddAsync(payment, ct);
+                payment                       = existing;
+                payment.StripePaymentIntentId = result.PaymentIntentId;
+                payment.Amount                = finalAmount;
+                payment.PlatformFee           = platformFee;
+                payment.ConsultantPayout      = finalAmount - platformFee;
+                payment.DiscountAmount        = discount;
+                payment.PromoCodeUsed         = promoUsed;
+                payment.Status                = PaymentStatus.Authorised;
+            }
+            else
+            {
+                var srNo = await _paymentServices.NewSerialNumberAsync(ct);
+                payment = new Payment
+                {
+                    SrNo                  = srNo,
+                    BookingId             = dto.BookingId,
+                    StudentUserId         = command.StudentUserId,
+                    ConsultantUserId      = consultantUserId,
+                    StripePaymentIntentId = result.PaymentIntentId,
+                    Amount                = finalAmount,
+                    PlatformFee           = platformFee,
+                    ConsultantPayout      = finalAmount - platformFee,
+                    DiscountAmount        = discount,
+                    PromoCodeUsed         = promoUsed,
+                    Status                = PaymentStatus.Authorised
+                };
+                await _paymentServices.AddAsync(payment, ct);
+            }
             await _paymentServices.SaveChangesAsync(ct);
 
             return new PaymentIntentResultDto
             {
-                PaymentId    = payment.Id,
-                ClientSecret = result.ClientSecret!,
-                IntentId     = result.PaymentIntentId,
-                Amount       = finalAmount,
-                Currency     = "gbp"
+                PaymentId        = payment.Id,
+                ClientSecret     = result.ClientSecret!,
+                IntentId         = result.PaymentIntentId,
+                Amount           = finalAmount,
+                PlatformFee      = platformFee,
+                ConsultantPayout = payment.ConsultantPayout,
+                Currency         = "gbp"
             };
         }
     }

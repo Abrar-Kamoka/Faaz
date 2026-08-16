@@ -1,6 +1,7 @@
 using Faaz.Services.Identity.Domain.Entities;
 using Faaz.Services.Identity.Infrastructure.Interfaces.Auth;
 using Faaz.Services.Identity.Infrastructure.Interfaces.Token;
+using Faaz.Services.Identity.Infrastructure.Services;
 using Faaz.Services.Identity.WebHost.Features.Auth.DTOs;
 using Faaz.Services.Identity.WebHost.HttpClients;
 using Faaz.SharedKernel.Exceptions;
@@ -22,6 +23,7 @@ public class LoginCommand : IRequest<AuthResponseDto>
 internal sealed class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto>
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly ITokenService _tokenService;
     private readonly IRefreshTokenServices _refreshTokenServices;
     private readonly IConsultantServiceClient _consultantClient;
@@ -30,6 +32,7 @@ internal sealed class LoginCommandHandler : IRequestHandler<LoginCommand, AuthRe
 
     public LoginCommandHandler(
         UserManager<ApplicationUser> userManager,
+        RoleManager<ApplicationRole> roleManager,
         ITokenService tokenService,
         IRefreshTokenServices refreshTokenServices,
         IConsultantServiceClient consultantClient,
@@ -37,6 +40,7 @@ internal sealed class LoginCommandHandler : IRequestHandler<LoginCommand, AuthRe
         ILogger<LoginCommandHandler> logger)
     {
         _userManager = userManager;
+        _roleManager = roleManager;
         _tokenService = tokenService;
         _refreshTokenServices = refreshTokenServices;
         _consultantClient = consultantClient;
@@ -84,16 +88,23 @@ internal sealed class LoginCommandHandler : IRequestHandler<LoginCommand, AuthRe
         if (user.Role == UserRole.Student && !user.IsEmailVerified)
             throw new ForbiddenException("email-not-verified", "Please verify your email address before logging in.");
 
-        var accessToken = _tokenService.GenerateAccessToken(user, out var jti);
+        var permissions = await PermissionResolver.GetPermissionsAsync(_userManager, _roleManager, user);
+        var accessToken = _tokenService.GenerateAccessToken(user, out var jti, permissions);
         var (rtPlaintext, rtHash) = _tokenService.GenerateRefreshToken();
         var ip = command.IpAddress ?? _httpContext.HttpContext?.Connection.RemoteIpAddress?.ToString();
+
+        // "Remember me" controls how long the refresh token itself stays valid server-side.
+        // The cookie's persistence (survives browser restart or not) is set separately in
+        // AuthController.SetRefreshTokenCookie using the same flag.
+        var expiresAt = DateTime.UtcNow.AddDays(command.PostModel.RememberMe ? 30 : 1);
 
         var existingToken = await _refreshTokenServices.GetByUserIdAsync(user.Id, ct);
         if (existingToken is not null)
         {
             existingToken.Token          = rtHash;
             existingToken.JwtId          = jti;
-            existingToken.ExpiresAt      = DateTime.UtcNow.AddDays(7);
+            existingToken.ExpiresAt      = expiresAt;
+            existingToken.RememberMe     = command.PostModel.RememberMe;
             existingToken.CreatedByIp    = ip;
             existingToken.IsUsed         = false;
             existingToken.IsRevoked      = false;
@@ -107,7 +118,8 @@ internal sealed class LoginCommandHandler : IRequestHandler<LoginCommand, AuthRe
                 UserId      = user.Id,
                 Token       = rtHash,
                 JwtId       = jti,
-                ExpiresAt   = DateTime.UtcNow.AddDays(7),
+                ExpiresAt   = expiresAt,
+                RememberMe  = command.PostModel.RememberMe,
                 CreatedByIp = ip
             }, ct);
         }
@@ -118,6 +130,6 @@ internal sealed class LoginCommandHandler : IRequestHandler<LoginCommand, AuthRe
 
         _logger.LogInformation("Login success for {UserId} ({Role})", user.Id, user.Role);
 
-        return new AuthResponseDto(AccessToken: accessToken, RefreshToken: rtPlaintext);
+        return new AuthResponseDto(AccessToken: accessToken, RefreshToken: rtPlaintext, RememberMe: command.PostModel.RememberMe);
     }
 }

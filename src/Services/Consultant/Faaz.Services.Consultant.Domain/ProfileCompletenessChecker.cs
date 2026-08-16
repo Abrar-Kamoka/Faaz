@@ -24,7 +24,11 @@ public static class ProfileCompletenessChecker
         // Only non-deleted weekly slots count (not blocked dates)
         var availability = p.AvailabilitySlots.Any(s => !s.IsBlockedDate && !s.IsDeleted);
 
-        return new Result(personalInfo, expertise, bio, pricing, availability);
+        // Consultants can't be paid without a verified Stripe Connect account — required, not optional,
+        // so a profile can never auto-activate (or count as "complete") without it.
+        var payoutAccount = p.IsStripeChargesEnabled;
+
+        return new Result(personalInfo, expertise, bio, pricing, availability, payoutAccount);
     }
 
     public readonly record struct Result(
@@ -32,16 +36,17 @@ public static class ProfileCompletenessChecker
         bool HasExpertise,
         bool HasBio,
         bool HasPricing,
-        bool HasAvailability)
+        bool HasAvailability,
+        bool HasPayoutAccount)
     {
         public bool IsComplete =>
-            HasPersonalInfo && HasExpertise && HasBio && HasPricing && HasAvailability;
+            HasPersonalInfo && HasExpertise && HasBio && HasPricing && HasAvailability && HasPayoutAccount;
 
         public int Percentage
         {
             get
             {
-                var steps = new[] { HasPersonalInfo, HasExpertise, HasBio, HasPricing, HasAvailability };
+                var steps = new[] { HasPersonalInfo, HasExpertise, HasBio, HasPricing, HasAvailability, HasPayoutAccount };
                 return (int)Math.Round(steps.Count(s => s) * 100.0 / steps.Length);
             }
         }

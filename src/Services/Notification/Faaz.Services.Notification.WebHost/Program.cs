@@ -24,6 +24,7 @@ try
 
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddFaazOpenTelemetry(builder.Configuration, "faaz-notification");
     builder.Services.AddNotificationInfrastructure(builder.Configuration);
 
     // JWT: same dynamic JWKS pattern as Student/Consultant services
@@ -102,26 +103,42 @@ try
 
     builder.Services.AddFaazRabbitMq(builder.Configuration, builder.Environment, x =>
     {
+        // Renamed to *NotificationConsumer wherever another service owns a same-named class for the
+        // same event (e.g. Student.Consumers.StudentRegisteredConsumer creates the profile stub;
+        // this service's copy sends the welcome/verify email). MassTransit's default endpoint naming
+        // is based on the consumer's simple type name, so two identically-named classes in different
+        // services silently bind to the SAME queue and become competing consumers — each message
+        // goes to only one of them, at random, so the "losing" side never runs. That's why
+        // verification emails (and several other notifications below) only fired intermittently.
         // Phase 2
-        x.AddConsumer<StudentRegisteredConsumer>();
-        x.AddConsumer<ConsultantEmailVerifiedConsumer>();
-        x.AddConsumer<ConsultantApprovedConsumer>();
+        x.AddConsumer<StudentRegisteredNotificationConsumer>();
+        x.AddConsumer<ConsultantEmailVerifiedNotificationConsumer>();
+        x.AddConsumer<ConsultantApprovedNotificationConsumer>();
         x.AddConsumer<ConsultantRejectedConsumer>();
         x.AddConsumer<ConsultantRevisionRequestedConsumer>();
         x.AddConsumer<SendVerificationEmailConsumer>();
         x.AddConsumer<SendPasswordResetEmailConsumer>();
         // Phase 3
         x.AddConsumer<BookingRequestReceivedConsumer>();
-        x.AddConsumer<BookingConfirmedConsumer>();
-        x.AddConsumer<BookingCancelledConsumer>();
+        x.AddConsumer<BookingRescheduledConsumer>();
+        x.AddConsumer<BookingConfirmedNotificationConsumer>();
+        x.AddConsumer<BookingCancelledNotificationConsumer>();
         x.AddConsumer<BookingDisputedConsumer>();
+        x.AddConsumer<DisputeResolvedNotificationConsumer>();
         x.AddConsumer<SessionReminderConsumer>();
         x.AddConsumer<SessionNoShowConsumer>();
-        x.AddConsumer<PayoutReleasedConsumer>();
+        x.AddConsumer<PayoutReleasedNotificationConsumer>();
         x.AddConsumer<PayoutFailedConsumer>();
         x.AddConsumer<RefundIssuedConsumer>();
-        x.AddConsumer<PaymentCapturedConsumer>();
-        x.AddConsumer<SessionCompletedConsumer>();
+        x.AddConsumer<PaymentCapturedNotificationConsumer>();
+        x.AddConsumer<PaymentAuthorizedNotificationConsumer>();
+        x.AddConsumer<SessionCompletedNotificationConsumer>();
+        // Phase 4
+        x.AddConsumer<RefundAppealApprovedNotificationConsumer>();
+        x.AddConsumer<ConsultantSuspendedByAdminConsumer>();
+        x.AddConsumer<ConsultantRestoredByAdminConsumer>();
+        x.AddConsumer<UserDeactivatedByAdminConsumer>();
+        x.AddConsumer<UserReactivatedByAdminConsumer>();
     });
 
     builder.Services.AddSwaggerGen(opts =>
@@ -136,6 +153,8 @@ try
         using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
         db.Database.Migrate();
+        var seederLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("NotificationTemplateSeeder");
+        await Faaz.Services.Notification.WebHost.Seeding.NotificationTemplateSeeder.SeedAsync(scope.ServiceProvider, seederLogger);
     }
     catch (Exception ex)
     {

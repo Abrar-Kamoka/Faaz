@@ -16,12 +16,14 @@ internal sealed class ConsultantApplicationConfiguration : IEntityTypeConfigurat
         builder.Property(a => a.LastName).HasMaxLength(100).IsRequired();
         builder.Property(a => a.PhoneNumber).HasMaxLength(30).IsRequired();
         builder.Property(a => a.CurrentRole).HasMaxLength(200).IsRequired();
-        builder.Property(a => a.ExpertiseArea).HasMaxLength(200).IsRequired();
+        builder.Property(a => a.Institution).HasMaxLength(200);
+        builder.Property(a => a.ExpertiseArea).HasMaxLength(1000).IsRequired();
         builder.Property(a => a.Nationality).HasMaxLength(100);
         builder.Property(a => a.CountryOfResidence).HasMaxLength(100);
         builder.Property(a => a.LinkedInProfileUrl).HasMaxLength(500);
         builder.Property(a => a.PrimaryLanguage).HasMaxLength(100);
         builder.Property(a => a.PersonalStatement).HasMaxLength(2000);
+        builder.Property(a => a.ReferralSource).HasMaxLength(100);
         builder.Property(a => a.AdminNotes).HasMaxLength(2000);
         builder.Property(a => a.SetupInviteToken).HasMaxLength(88);
         builder.Property(a => a.SubmittedAt).IsRequired();

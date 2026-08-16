@@ -1,6 +1,7 @@
 using Faaz.Services.Identity.WebHost.Features.Auth.Commands;
 using Faaz.Services.Identity.WebHost.Features.Auth.DTOs;
 using Faaz.Services.Identity.WebHost.Features.Auth.Queries;
+using Faaz.Services.Identity.WebHost.HttpClients;
 using Faaz.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -17,10 +18,12 @@ namespace Faaz.Services.Identity.WebHost.Features.Auth;
 public class AuthController : FaazApiController
 {
     private readonly IMediator _mediator;
+    private readonly IConsultantServiceClient _consultantClient;
 
-    public AuthController(IMediator mediator)
+    public AuthController(IMediator mediator, IConsultantServiceClient consultantClient)
     {
-        _mediator = mediator;
+        _mediator         = mediator;
+        _consultantClient = consultantClient;
     }
 
     /// <summary>Register a new student account.</summary>
@@ -49,6 +52,24 @@ public class AuthController : FaazApiController
         return StatusCode(201, ApiResponse.Created(new { applicationId }, "Application submitted successfully."));
     }
 
+    /// <summary>Look up the email address associated with a consultant invite token. Used to pre-fill the account-setup form.</summary>
+    [HttpGet("invite-info")]
+    [IgnoreAntiforgeryToken]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetInviteInfo([FromQuery] string token, CancellationToken ct)
+    {
+        try
+        {
+            var (email, _) = await _consultantClient.ValidateInviteTokenAsync(token, ct);
+            return Ok(ApiResponse.Ok(new { email }, "Invite token valid."));
+        }
+        catch
+        {
+            return BadRequest(ApiResponse.Fail(400, "Invalid or expired invite token."));
+        }
+    }
+
     /// <summary>Create consultant account after clicking invite link. Email is pre-filled from the invite and must match.</summary>
     [HttpPost("create-consultant-account")]
     [IgnoreAntiforgeryToken]
@@ -60,12 +81,12 @@ public class AuthController : FaazApiController
         return StatusCode(201, ApiResponse.Created(new { userId }, "Consultant account created successfully."));
     }
 
-    /// <summary>Log in. Returns an access token (JWT) and a refresh token. Decode the JWT to read claims: sub, userId, email, role, consultant_status.</summary>
+    /// <summary>Log in. Returns an access token (JWT). The refresh token is set as an httpOnly cookie (faaz_rt).</summary>
     [HttpPost("login")]
     [EnableRateLimiting("auth")]
     [IgnoreAntiforgeryToken]
     [DisableRequestSizeLimit]
-    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Login([FromBody] LoginDto postModel, CancellationToken ct)
     {
         var result = await _mediator.Send(new LoginCommand
@@ -73,37 +94,81 @@ public class AuthController : FaazApiController
             PostModel = postModel,
             IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString()
         }, ct);
-        return Ok(ApiResponse.Ok(result, "Login successful."));
+        SetRefreshTokenCookie(result.RefreshToken, result.RememberMe);
+        return Ok(ApiResponse.Ok(new { result.AccessToken }, "Login successful."));
     }
 
-    /// <summary>Exchange a refresh token for a new access token + refresh token pair.</summary>
+    /// <summary>Exchange the faaz_rt httpOnly cookie for a new access token. A new faaz_rt cookie is issued in the response.</summary>
     [HttpPost("refresh-token")]
     [IgnoreAntiforgeryToken]
     [DisableRequestSizeLimit]
-    [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto body, CancellationToken ct)
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> RefreshToken(CancellationToken ct)
     {
+        var token = Request.Cookies["faaz_rt"];
+        if (string.IsNullOrEmpty(token))
+            return Unauthorized(ApiResponse.Fail(401, "Refresh token missing."));
+
         var result = await _mediator.Send(new RefreshTokenCommand
         {
-            RefreshToken = body.RefreshToken,
+            RefreshToken = token,
             IpAddress    = HttpContext.Connection.RemoteIpAddress?.ToString()
         }, ct);
-        return Ok(ApiResponse.Ok(result, "Token refreshed."));
+        SetRefreshTokenCookie(result.RefreshToken, result.RememberMe);
+        return Ok(ApiResponse.Ok(new { result.AccessToken }, "Token refreshed."));
     }
 
-    /// <summary>Revoke all refresh tokens for the authenticated user.</summary>
+    /// <summary>Revoke the refresh token and clear the faaz_rt cookie.</summary>
     [HttpPost("logout")]
-    [Authorize]
+    [IgnoreAntiforgeryToken]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Logout(CancellationToken ct)
     {
-        var userId = Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
-        await _mediator.Send(new LogoutCommand
+        // Best-effort DB revocation — only possible when a valid bearer token is present.
+        var userIdStr = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        if (Guid.TryParse(userIdStr, out var userId))
         {
-            UserId    = userId,
-            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString()
-        }, ct);
+            try
+            {
+                await _mediator.Send(new LogoutCommand
+                {
+                    UserId    = userId,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString()
+                }, ct);
+            }
+            catch { /* ignore — cookie is cleared regardless */ }
+        }
+        ClearRefreshTokenCookie();
         return Ok(ApiResponse.NoContent("Logged out successfully."));
+    }
+
+    /// <summary>
+    /// When rememberMe is true the cookie is persistent (survives browser restart, 30 days).
+    /// When false, Expires is left null so the browser treats it as a session cookie — cleared
+    /// on browser close — while the refresh token itself still caps out at 1 day server-side.
+    /// </summary>
+    private void SetRefreshTokenCookie(string token, bool rememberMe)
+    {
+        Response.Cookies.Append("faaz_rt", token, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure   = Request.IsHttps,
+            SameSite = SameSiteMode.Lax,
+            Expires  = rememberMe ? DateTimeOffset.UtcNow.AddDays(30) : null,
+            Path     = "/",
+        });
+    }
+
+    private void ClearRefreshTokenCookie()
+    {
+        Response.Cookies.Append("faaz_rt", "", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure   = Request.IsHttps,
+            SameSite = SameSiteMode.Lax,
+            Expires  = DateTimeOffset.UnixEpoch,
+            Path     = "/",
+        });
     }
 
     /// <summary>Verify email address using the token from the verification email.</summary>
@@ -162,6 +227,28 @@ public class AuthController : FaazApiController
         var userId = Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var result = await _mediator.Send(new GetCurrentUserQuery(userId), ct);
         return Ok(ApiResponse.Ok(result));
+    }
+
+    /// <summary>Change the current authenticated user's password.</summary>
+    [HttpPut("password")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto postModel, CancellationToken ct)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        await _mediator.Send(new ChangePasswordCommand { UserId = userId, PostModel = postModel }, ct);
+        return Ok(ApiResponse.NoContent("Password changed successfully."));
+    }
+
+    /// <summary>Permanently delete (soft-delete + PII scrub) the current authenticated user's account.</summary>
+    [HttpDelete("account")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> DeleteAccount(CancellationToken ct)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        await _mediator.Send(new DeleteAccountCommand { UserId = userId }, ct);
+        return Ok(ApiResponse.NoContent("Account deleted."));
     }
 
     /// <summary>RS256 public key in JWKS format — used by other services to validate JWTs.</summary>

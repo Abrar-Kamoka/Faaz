@@ -1,5 +1,6 @@
 using Faaz.Services.Booking.Domain.Entities;
 using Faaz.Services.Booking.Infrastructure.Interfaces;
+using Faaz.Services.Booking.Infrastructure.Services;
 using Faaz.Services.Booking.WebHost.Features.Bookings.DTOs;
 using Faaz.SharedKernel.Exceptions;
 using Faaz.SharedKernel.IntegrationEvents;
@@ -22,9 +23,10 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
     public class CancelBookingCommandHandler : IRequestHandler<CancelBookingCommand>
     {
         private readonly IBookingServices _bookingServices;
+        private readonly ISlotLockService _slotLock;
         private readonly IPublishEndpoint _publishEndpoint;
 
-        public CancelBookingCommandHandler(IBookingServices b, IPublishEndpoint p) { _bookingServices = b; _publishEndpoint = p; }
+        public CancelBookingCommandHandler(IBookingServices b, ISlotLockService s, IPublishEndpoint p) { _bookingServices = b; _slotLock = s; _publishEndpoint = p; }
 
         public async Task Handle(CancelBookingCommand command, CancellationToken ct)
         {
@@ -37,14 +39,22 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
             if (!isCancellingStudent && !isCancellingConsultant)
                 throw new ForbiddenException("You are not a participant in this booking.");
 
-            var validStatuses = new[] { BookingStatus.PendingConfirmation, BookingStatus.Confirmed };
+            var validStatuses = new[] { BookingStatus.SlotReserved, BookingStatus.PendingConfirmation, BookingStatus.Confirmed };
             if (!validStatuses.Contains(booking.Status))
                 throw BusinessRuleException.Error($"Cannot cancel in status {booking.Status}.", "booking.invalid-status");
 
             BookingStatus newStatus;
             int refundPercentage;
 
-            if (isCancellingConsultant)
+            if (booking.Status == BookingStatus.SlotReserved)
+            {
+                // Never confirmed by the consultant, and never actually captured — this is releasing
+                // an in-progress reservation, not cancelling a paid session, so the hours-until-session
+                // refund tiers below don't apply. Always a full release, either party.
+                newStatus        = isCancellingConsultant ? BookingStatus.CancelledByConsultant : BookingStatus.CancelledByStudent;
+                refundPercentage = 100;
+            }
+            else if (isCancellingConsultant)
             {
                 newStatus        = BookingStatus.CancelledByConsultant;
                 refundPercentage = 100;
@@ -59,6 +69,12 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
             }
 
             var fromStatus = booking.Status;
+            if (fromStatus == BookingStatus.SlotReserved)
+            {
+                var lockKey = $"slot:{booking.ConsultantProfileId}:{booking.ScheduledStartUtc:yyyyMMddHHmm}";
+                await _slotLock.ReleaseAsync(lockKey, ct);
+            }
+
             booking.Status             = newStatus;
             booking.CancellationReason = isCancellingConsultant ? CancellationReason.ConsultantCancelled : CancellationReason.StudentCancelled;
             booking.CancellationNotes  = command.PutModel.Reason;

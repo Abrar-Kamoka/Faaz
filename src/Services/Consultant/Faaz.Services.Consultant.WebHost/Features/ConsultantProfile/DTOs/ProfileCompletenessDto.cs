@@ -8,5 +8,6 @@ public class ProfileCompletenessDto
     public bool HasBio { get; set; }
     public bool HasPricing { get; set; }
     public bool HasAvailability { get; set; }
+    public bool HasPayoutAccount { get; set; }
     public bool IsComplete { get; set; }
 }

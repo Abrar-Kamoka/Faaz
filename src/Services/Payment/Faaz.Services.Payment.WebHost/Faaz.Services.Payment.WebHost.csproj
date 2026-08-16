@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <UserSecretsId>faaz-payment-service</UserSecretsId>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Faaz.Services.Payment.Domain\Faaz.Services.Payment.Domain.csproj" />
     <ProjectReference Include="..\Faaz.Services.Payment.Infrastructure\Faaz.Services.Payment.Infrastructure.csproj" />

@@ -22,6 +22,10 @@ public class RefreshToken : BaseSoftDeleteModel
     public bool IsUsed { get; set; } = false;
     public bool IsRevoked { get; set; } = false;
 
+    /// <summary>Set from the login "Remember me" checkbox — controls both cookie persistence
+    /// and how long each rotation on refresh extends ExpiresAt (30 days vs 1 day).</summary>
+    public bool RememberMe { get; set; } = false;
+
     public string? ReplacedByToken { get; set; }
 
     [MaxLength(45)]

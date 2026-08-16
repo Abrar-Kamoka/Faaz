@@ -23,6 +23,7 @@ try
 
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddFaazOpenTelemetry(builder.Configuration, "faaz-student");
     builder.Services.AddStudentInfrastructure(builder.Configuration, typeof(Program).Assembly, builder.Environment);
     builder.Services.AddStudentHttpClients(builder.Configuration, builder.Environment);
     builder.Services.AddFaazRabbitMq(builder.Configuration, builder.Environment, x =>

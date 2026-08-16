@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- References Booking.WebHost so Hangfire can resolve the same job types by FQN. -->
+  <!-- Booking controllers are NOT auto-discovered — BackgroundJobs is entry assembly. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Booking\Faaz.Services.Booking.WebHost\Faaz.Services.Booking.WebHost.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Faaz.SharedKernel\Faaz.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Faaz.BuildingBlocks\Faaz.BuildingBlocks.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.Seq" />
+    <PackageReference Include="Serilog.Enrichers.CorrelationId" />
+    <PackageReference Include="Serilog.Enrichers.Environment" />
+  </ItemGroup>
+</Project>

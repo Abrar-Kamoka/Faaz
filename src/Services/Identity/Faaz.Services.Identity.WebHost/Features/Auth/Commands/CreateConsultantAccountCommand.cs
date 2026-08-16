@@ -57,20 +57,20 @@ internal sealed class CreateConsultantAccountCommandHandler : IRequestHandler<Cr
 
         var app = await _consultantClient.GetApplicationDetailAsync(applicationId, ct);
 
-        var (verifyPlaintext, verifyHash) = _tokenService.GenerateOpaqueToken();
+        var (verifyPlaintext, _) = _tokenService.GenerateOpaqueToken();
 
         var user = new ApplicationUser
         {
-            UserName                    = email,
-            Email                       = email,
-            FirstName                   = app.FirstName,
-            LastName                    = app.LastName,
-            Role                        = UserRole.Consultant,
-            Status                      = UserStatus.PendingEmailVerification,
-            ConsultantApplicationStatus = ConsultantApplicationStatus.Invited,
-            IsEmailVerified             = false,
-            EmailVerificationToken       = verifyHash,
-            EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24)
+            UserName                     = email,
+            Email                        = email,
+            FirstName                    = app.FirstName,
+            LastName                     = app.LastName,
+            Role                         = UserRole.Consultant,
+            Status                       = UserStatus.PendingEmailVerification,
+            ConsultantApplicationStatus  = ConsultantApplicationStatus.Invited,
+            IsEmailVerified              = false,
+            EmailVerificationToken       = verifyPlaintext,
+            EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24),
         };
 
         var result = await _userManager.CreateAsync(user, command.PostModel.Password);
@@ -82,6 +82,8 @@ internal sealed class CreateConsultantAccountCommandHandler : IRequestHandler<Cr
 
         await _consultantClient.LinkUserToApplicationAsync(applicationId, user.Id, ct);
 
+        // The consumer will re-read the token from the DB at delivery time, so the
+        // email always reflects whatever is actually stored — immune to resend races.
         await _publishEndpoint.Publish(new SendVerificationEmailEvent(
             email, app.FirstName, verifyPlaintext), ct);
 

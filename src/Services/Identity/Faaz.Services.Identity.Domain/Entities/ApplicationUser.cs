@@ -25,7 +25,7 @@ public class ApplicationUser : IdentityUser<Guid>
     public UserStatus Status { get; set; } = UserStatus.PendingEmailVerification;
     public bool IsEmailVerified { get; set; } = false;
 
-    [MaxLength(64)]
+    [MaxLength(512)]
     public string? EmailVerificationToken { get; set; }
 
     public DateTime? EmailVerificationTokenExpiry { get; set; }

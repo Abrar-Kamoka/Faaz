@@ -54,10 +54,7 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<IPasswordResetTokenServices, PasswordResetTokenManager>();
         services.AddScoped<IApplicationUserRepository, ApplicationUserRepository>();
         services.AddSingleton<ITokenService, TokenService>();
-        if (env.IsDevelopment())
-            services.AddScoped<IEmailService, DevSmtpEmailService>();
-        else
-            services.AddScoped<IEmailService, SmtpEmailService>();
+        services.AddScoped<IEmailService, SmtpEmailService>();
 
         services.AddHttpContextAccessor();
 

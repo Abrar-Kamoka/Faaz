@@ -4,7 +4,7 @@ namespace Faaz.Services.Identity.Infrastructure.Interfaces.Token;
 
 public interface ITokenService
 {
-    string GenerateAccessToken(ApplicationUser user, out string jti);
+    string GenerateAccessToken(ApplicationUser user, out string jti, IReadOnlyList<string>? permissions = null);
     (string plaintext, string hash) GenerateRefreshToken();
     (string plaintext, string hash) GenerateOpaqueToken();
     string GetJwksJson();

@@ -9,3 +9,6 @@ public class JoinSessionResultDto
 }
 
 public class JoinSessionDto { public bool PreSessionCheckCompleted { get; set; } }
+
+public class SessionNotesDto { public string Notes { get; set; } = ""; }
+public class SaveSessionNotesDto { public string Notes { get; set; } = ""; }

@@ -8,6 +8,7 @@ public sealed record ApplicationDetailDto(
     string LastName,
     string PhoneNumber,
     string CurrentRole,
+    string? Institution,
     string ExpertiseArea,
     int YearsOfExperience,
     bool IsUkBased,
@@ -19,6 +20,7 @@ public sealed record ApplicationDetailDto(
     string? PrimaryLanguage,
     string? PersonalStatement,
     string? ConsultationMode,
+    string? ReferralSource,
     string Status,
     string? AdminNotes,
     string? Remarks,
@@ -32,4 +34,5 @@ public sealed record ApplicationDocumentDto(
     string FileName,
     string ContentType,
     long FileSizeBytes,
-    DateTime UploadedAt);
+    DateTime UploadedAt,
+    string? FileUrl);

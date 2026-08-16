@@ -30,5 +30,36 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
     build:
       target: build
-    volumes:
-      - ./src/Services/Consultant/Faaz.Services.Consultant:/app/src
+
+  notification:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Smtp__Host: mailhog
+      Smtp__Port: 1025
+      Smtp__UseSsl: "false"
+    build:
+      target: build
+
+  booking:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    build:
+      target: build
+
+  payment:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    build:
+      target: build
+
+  administration:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    build:
+      target: build
+
+  backgroundjobs:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    build:
+      target: build

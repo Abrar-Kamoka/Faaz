@@ -36,7 +36,16 @@ public class ConsultantRejectedConsumer : IConsumer<ConsultantRejectedEvent>
             <p><strong>Reason:</strong> {reason}</p>
             <p>If you have questions, please contact our support team.</p>";
 
-        await _emailSender.SendAsync(msg.Email, subject, body, ct);
+        var status = NotificationStatus.Sent;
+        try
+        {
+            await _emailSender.SendAsync(msg.Email, subject, body, ct);
+        }
+        catch (Exception ex)
+        {
+            status = NotificationStatus.Failed;
+            _logger.LogError(ex, "Rejection email delivery failed for {Email}", msg.Email);
+        }
 
         if (msg.UserId != Guid.Empty)
         {
@@ -47,7 +56,7 @@ public class ConsultantRejectedConsumer : IConsumer<ConsultantRejectedEvent>
                 Type    = nameof(ConsultantRejectedEvent),
                 Subject = subject,
                 Body    = body,
-                Status  = NotificationStatus.Sent,
+                Status  = status,
                 SentAt  = DateTime.UtcNow,
                 Payload = JsonSerializer.Serialize(msg)
             }, ct);
@@ -55,7 +64,7 @@ public class ConsultantRejectedConsumer : IConsumer<ConsultantRejectedEvent>
             await _logServices.SaveChangesAsync(ct);
         }
 
-        _logger.LogInformation("Rejection email sent for consultant {Email}", msg.Email);
+        _logger.LogInformation("Rejection email status {Status} for consultant {Email}", status, msg.Email);
     }
 }
 

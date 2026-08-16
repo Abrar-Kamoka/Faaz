@@ -37,13 +37,32 @@ internal sealed class ResendVerificationCommandHandler : IRequestHandler<ResendV
     public async Task Handle(ResendVerificationCommand command, CancellationToken ct)
     {
         var user = await _userManager.FindByEmailAsync(command.PostModel.Email);
-        if (user is null || user.IsEmailVerified)
-            throw BusinessRuleException.Error("This Email is Already Verified.", "email-verification.invalid");
+        if (user is null)
+            throw BusinessRuleException.Error("No account found with that email address.", "email-verification.not-found");
+        if (user.IsEmailVerified)
+            throw BusinessRuleException.Error("This email address is already verified.", "email-verification.already-verified");
 
-        var (plaintext, hash) = _tokenService.GenerateOpaqueToken();
-        user.EmailVerificationToken = hash;
-        user.EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24);
-        await _userManager.UpdateAsync(user);
+        // Reuse the existing token while it is still within its 24-hour window.
+        // Generating a new token here would overwrite the DB value, so if the
+        // original email arrives after the resend the stored token would no longer
+        // match — which is exactly the mismatch bug we are fixing.
+        string plaintext;
+        if (!string.IsNullOrEmpty(user.EmailVerificationToken)
+            && user.EmailVerificationTokenExpiry.HasValue
+            && user.EmailVerificationTokenExpiry.Value > DateTime.UtcNow)
+        {
+            plaintext = user.EmailVerificationToken;
+        }
+        else
+        {
+            var (newPlaintext, _) = _tokenService.GenerateOpaqueToken();
+            user.EmailVerificationToken       = newPlaintext;
+            user.EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24);
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+                throw new InvalidOperationException("Failed to generate a new verification token.");
+            plaintext = newPlaintext;
+        }
 
         await _publishEndpoint.Publish(new SendVerificationEmailEvent(
             user.Email!, user.FirstName, plaintext), ct);

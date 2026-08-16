@@ -18,6 +18,7 @@ public class ConsultantApplication : BaseSoftDeleteModel
     public string PhoneNumber { get; set; } = null!;
     public bool IsUkBased { get; set; }
     public string CurrentRole { get; set; } = null!;
+    public string? Institution { get; set; }
     public string ExpertiseArea { get; set; } = null!;
     public int YearsOfExperience { get; set; }
     public DateOnly? DateOfBirth { get; set; }
@@ -28,6 +29,7 @@ public class ConsultantApplication : BaseSoftDeleteModel
     public string? PrimaryLanguage { get; set; }
     public string? PersonalStatement { get; set; }
     public ConsultationMode? ConsultationMode { get; set; }
+    public string? ReferralSource { get; set; }
 
     public ConsultantApplicationStatus ApplicationStatus { get; set; } = ConsultantApplicationStatus.Submitted;
     public string? AdminNotes { get; set; }

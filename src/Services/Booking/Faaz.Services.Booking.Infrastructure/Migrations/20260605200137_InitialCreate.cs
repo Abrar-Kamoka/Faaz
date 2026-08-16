@@ -217,7 +217,7 @@ namespace Faaz.Services.Booking.Infrastructure.Migrations
                         principalSchema: "booking",
                         principalTable: "Sessions",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(

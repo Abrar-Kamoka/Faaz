@@ -96,6 +96,45 @@ namespace Faaz.Services.Student.Infrastructure.Migrations
                     b.ToTable("StudentPostgraduateData", (string)null);
                 });
 
+            modelBuilder.Entity("Faaz.Services.Student.Domain.Entities.SavedConsultant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ConsultantUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SrNo")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("StudentUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StudentUserId", "ConsultantUserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_SavedConsultants_Student_Consultant");
+
+                    b.ToTable("SavedConsultants", (string)null);
+                });
+
             modelBuilder.Entity("Faaz.Services.Student.Domain.Entities.SixthFormData", b =>
                 {
                     b.Property<Guid>("Id")

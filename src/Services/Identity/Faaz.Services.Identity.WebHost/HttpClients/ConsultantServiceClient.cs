@@ -31,6 +31,8 @@ internal sealed class ConsultantServiceClient : IConsultantServiceClient
         AddField(content, "ExpertiseArea",    request.ExpertiseArea);
         AddField(content, "YearsOfExperience", request.YearsOfExperience.ToString());
 
+        if (request.Institution is not null)
+            AddField(content, "Institution", request.Institution);
         if (request.DateOfBirth.HasValue)
             AddField(content, "DateOfBirth", request.DateOfBirth.Value.ToString("yyyy-MM-dd"));
         if (request.Nationality is not null)
@@ -47,6 +49,8 @@ internal sealed class ConsultantServiceClient : IConsultantServiceClient
             AddField(content, "PersonalStatement", request.PersonalStatement);
         if (request.ConsultationMode.HasValue)
             AddField(content, "ConsultationMode", ((int)request.ConsultationMode.Value).ToString());
+        if (request.ReferralSource is not null)
+            AddField(content, "ReferralSource", request.ReferralSource);
 
         if (request.Documents is { Count: > 0 })
         {

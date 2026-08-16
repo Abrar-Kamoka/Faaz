@@ -35,6 +35,10 @@ public class Booking : BaseSoftDeleteModel
     public int?      RefundPercentage        { get; set; }
     public DateTime? CompletedAt             { get; set; }
     public DateTime? SettledAt               { get; set; }
+    public string?   DisputeReason           { get; set; }
+    public string?   DisputeResolution       { get; set; }
+    public string?   DisputeResolutionNote   { get; set; }
+    public DateTime? DisputeResolvedAt       { get; set; }
     public Guid?     PromoCodeId             { get; set; }
     public string?   Remarks                 { get; set; }
     public string?   ExtraField1             { get; set; }

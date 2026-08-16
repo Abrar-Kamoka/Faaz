@@ -3,10 +3,7 @@ using Faaz.Services.Booking.Infrastructure.Interfaces;
 using Faaz.Services.Booking.Infrastructure.Services;
 using Faaz.Services.Booking.WebHost.Features.Bookings.DTOs;
 using Faaz.SharedKernel.Exceptions;
-using Faaz.SharedKernel.IntegrationEvents;
-using MassTransit;
 using MediatR;
-using StackExchange.Redis;
 
 namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
 {
@@ -23,11 +20,10 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
     {
         private readonly IBookingServices _bookingServices;
         private readonly IBookingConsultantClient _consultantClient;
-        private readonly IConnectionMultiplexer _redis;
-        private readonly IPublishEndpoint _publishEndpoint;
+        private readonly ISlotLockService _slotLock;
 
-        public CreateBookingCommandHandler(IBookingServices b, IBookingConsultantClient c, IConnectionMultiplexer r, IPublishEndpoint p)
-        { _bookingServices = b; _consultantClient = c; _redis = r; _publishEndpoint = p; }
+        public CreateBookingCommandHandler(IBookingServices b, IBookingConsultantClient c, ISlotLockService s)
+        { _bookingServices = b; _consultantClient = c; _slotLock = s; }
 
         public async Task<Guid> Handle(CreateBookingCommand command, CancellationToken ct)
         {
@@ -38,14 +34,13 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
                 throw BusinessRuleException.Error("The selected time slot is not available.", "slot.unavailable");
 
             var lockKey = $"slot:{dto.ConsultantProfileId}:{dto.ScheduledStartUtc:yyyyMMddHHmm}";
-            var db      = _redis.GetDatabase();
-            var locked  = await db.StringSetAsync(lockKey, command.RequestingStudentId.ToString(), TimeSpan.FromMinutes(10), When.NotExists);
-            if (!locked)
+            var acquired = await _slotLock.TryAcquireAsync(lockKey, TimeSpan.FromMinutes(10), ct);
+            if (!acquired)
                 throw BusinessRuleException.Error("The selected time slot was just taken. Please choose another.", "slot.taken");
 
             if (await _bookingServices.IsSlotTakenAsync(dto.ConsultantProfileId, dto.ScheduledStartUtc, ct))
             {
-                await db.KeyDeleteAsync(lockKey);
+                await _slotLock.ReleaseAsync(lockKey, ct);
                 throw BusinessRuleException.Error("The selected time slot is no longer available.", "slot.taken");
             }
 
@@ -83,9 +78,9 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
             }, ct);
             await _bookingServices.SaveChangesAsync(ct);
 
-            await _publishEndpoint.Publish(new BookingRequestReceivedEvent(
-                booking.Id, dto.ConsultantProfileId, command.RequestingStudentId,
-                new DateTimeOffset(dto.ScheduledStartUtc, TimeSpan.Zero)), ct);
+            // The consultant is NOT notified here — a SlotReserved booking isn't a real request
+            // yet (payment hasn't been authorized). See PaymentAuthorizedConsumer, which publishes
+            // BookingRequestReceivedEvent once the booking actually becomes PendingConfirmation.
 
             return booking.Id;
         }

@@ -63,6 +63,18 @@ namespace Faaz.Services.Booking.Infrastructure.Migrations
                     b.Property<Guid?>("DeletedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("DisputeReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DisputeResolution")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DisputeResolutionNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DisputeResolvedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("int");
 
@@ -671,7 +683,7 @@ namespace Faaz.Services.Booking.Infrastructure.Migrations
                     b.HasOne("Faaz.Services.Booking.Domain.Entities.Session", "Session")
                         .WithMany()
                         .HasForeignKey("SessionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Booking");

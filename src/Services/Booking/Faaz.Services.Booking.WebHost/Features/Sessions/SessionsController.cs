@@ -1,3 +1,4 @@
+using Faaz.Services.Booking.Infrastructure.Interfaces;
 using Faaz.Services.Booking.WebHost.Features.Sessions.Commands;
 using Faaz.Services.Booking.WebHost.Features.Sessions.DTOs;
 using Faaz.SharedKernel.Results;
@@ -11,8 +12,13 @@ namespace Faaz.Services.Booking.WebHost.Features.Sessions;
 public class SessionsController : FaazApiController
 {
     private readonly IMediator _mediator;
+    private readonly IBookingServices _bookingServices;
 
-    public SessionsController(IMediator mediator) { _mediator = mediator; }
+    public SessionsController(IMediator mediator, IBookingServices bookingServices)
+    {
+        _mediator        = mediator;
+        _bookingServices = bookingServices;
+    }
 
     [HttpPost("{bookingId:guid}/join")]
     [Authorize(Policy = "BookingParticipantOrAdmin")]
@@ -29,5 +35,25 @@ public class SessionsController : FaazApiController
             PostModel        = dto
         });
         return Ok(ApiResponse.Ok(result));
+    }
+
+    [HttpGet("{bookingId:guid}/notes")]
+    [Authorize(Policy = "BookingParticipantOrAdmin")]
+    public async Task<IActionResult> GetSessionNotes(Guid bookingId, CancellationToken ct)
+    {
+        var booking = await _bookingServices.GetByIdAsync(bookingId, ct);
+        if (booking is null) return NotFound(ApiResponse.Fail(404, "Booking not found."));
+        return Ok(ApiResponse.Ok(new SessionNotesDto { Notes = booking.ExtraField1 ?? "" }));
+    }
+
+    [HttpPost("{bookingId:guid}/notes")]
+    [Authorize(Policy = "ConsultantOnly")]
+    public async Task<IActionResult> SaveSessionNotes(Guid bookingId, [FromBody] SaveSessionNotesDto dto, CancellationToken ct)
+    {
+        var booking = await _bookingServices.GetByIdAsync(bookingId, ct);
+        if (booking is null) return NotFound(ApiResponse.Fail(404, "Booking not found."));
+        booking.ExtraField1 = dto.Notes?[..Math.Min(dto.Notes.Length, 500)] ?? "";
+        await _bookingServices.SaveChangesAsync(ct);
+        return Ok(ApiResponse.NoContent());
     }
 }

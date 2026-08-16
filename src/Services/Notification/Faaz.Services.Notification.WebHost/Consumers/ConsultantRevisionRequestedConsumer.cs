@@ -36,7 +36,16 @@ public class ConsultantRevisionRequestedConsumer : IConsumer<ConsultantRevisionR
             <p><strong>Notes from the reviewer:</strong> {notes}</p>
             <p>Please log in to update your profile and resubmit for review.</p>";
 
-        await _emailSender.SendAsync(msg.Email, subject, body, ct);
+        var status = NotificationStatus.Sent;
+        try
+        {
+            await _emailSender.SendAsync(msg.Email, subject, body, ct);
+        }
+        catch (Exception ex)
+        {
+            status = NotificationStatus.Failed;
+            _logger.LogError(ex, "Revision request email delivery failed for consultant {UserId}", msg.UserId);
+        }
 
         await _logServices.AddAsync(new NotificationLog
         {
@@ -45,14 +54,14 @@ public class ConsultantRevisionRequestedConsumer : IConsumer<ConsultantRevisionR
             Type    = nameof(ConsultantRevisionRequestedEvent),
             Subject = subject,
             Body    = body,
-            Status  = NotificationStatus.Sent,
+            Status  = status,
             SentAt  = DateTime.UtcNow,
             Payload = JsonSerializer.Serialize(msg)
         }, ct);
 
         await _logServices.SaveChangesAsync(ct);
 
-        _logger.LogInformation("Revision request email sent for consultant {UserId}", msg.UserId);
+        _logger.LogInformation("Revision request email status {Status} for consultant {UserId}", status, msg.UserId);
     }
 }
 

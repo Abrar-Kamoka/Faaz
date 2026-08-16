@@ -34,8 +34,9 @@ internal sealed class GetProfileCompletenessQueryHandler : IRequestHandler<GetPr
             HasExpertise    = check.HasExpertise,
             HasBio          = check.HasBio,
             HasPricing      = check.HasPricing,
-            HasAvailability = check.HasAvailability,
-            IsComplete      = check.IsComplete
+            HasAvailability  = check.HasAvailability,
+            HasPayoutAccount = check.HasPayoutAccount,
+            IsComplete       = check.IsComplete
         };
     }
 }

@@ -32,6 +32,12 @@ namespace Faaz.Services.Identity.Infrastructure.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsSystemRole")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -58,9 +64,28 @@ namespace Faaz.Services.Identity.Infrastructure.Migrations
                         {
                             Id = new Guid("b0044d0a-1f88-4957-953c-8b188a72aa02"),
                             ConcurrencyStamp = "static-seed-v1",
+                            IsSystemRole = true,
                             Name = "Admin",
                             NormalizedName = "ADMIN",
                             RoleType = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("c1155e1b-2f99-4a68-a64d-9c299b83bb03"),
+                            ConcurrencyStamp = "static-seed-v1",
+                            IsSystemRole = true,
+                            Name = "Student",
+                            NormalizedName = "STUDENT",
+                            RoleType = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("d2266f2c-3a00-4b79-b75e-ad3a0c94cc04"),
+                            ConcurrencyStamp = "static-seed-v1",
+                            IsSystemRole = true,
+                            Name = "Consultant",
+                            NormalizedName = "CONSULTANT",
+                            RoleType = 2
                         });
                 });
 
@@ -103,8 +128,8 @@ namespace Faaz.Services.Identity.Infrastructure.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("EmailVerificationToken")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
 
                     b.Property<DateTime?>("EmailVerificationTokenExpiry")
                         .HasColumnType("datetime2");
@@ -319,6 +344,47 @@ namespace Faaz.Services.Identity.Infrastructure.Migrations
                     b.ToTable("PasswordResetTokens");
                 });
 
+            modelBuilder.Entity("Faaz.Services.Identity.Domain.Entities.Permission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SrNo")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Permissions");
+                });
+
             modelBuilder.Entity("Faaz.Services.Identity.Domain.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -369,6 +435,9 @@ namespace Faaz.Services.Identity.Infrastructure.Migrations
                     b.Property<string>("Remarks")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("RememberMe")
+                        .HasColumnType("bit");
 
                     b.Property<string>("ReplacedByToken")
                         .HasColumnType("nvarchar(max)");

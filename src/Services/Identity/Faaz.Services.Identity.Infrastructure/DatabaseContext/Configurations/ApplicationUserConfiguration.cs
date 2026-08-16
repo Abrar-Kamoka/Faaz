@@ -12,7 +12,7 @@ internal sealed class ApplicationUserConfiguration : IEntityTypeConfiguration<Ap
         builder.Property(u => u.LastName).HasMaxLength(100).IsRequired();
         builder.Property(u => u.Role).IsRequired();
         builder.Property(u => u.Status).IsRequired();
-        builder.Property(u => u.EmailVerificationToken).HasMaxLength(64);
+        builder.Property(u => u.EmailVerificationToken).HasMaxLength(512);
         builder.Property(u => u.Remarks).HasMaxLength(500);
         builder.Property(u => u.ExtraField1).HasMaxLength(500);
         builder.Property(u => u.ExtraField2).HasMaxLength(500);

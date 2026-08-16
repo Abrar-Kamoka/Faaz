@@ -28,5 +28,6 @@
     <PackageReference Include="Hangfire.AspNetCore" />
     <PackageReference Include="StackExchange.Redis" />
     <PackageReference Include="Livekit.Server.Sdk.Dotnet" />
+    <PackageReference Include="QuestPDF" />
   </ItemGroup>
 </Project>

@@ -69,8 +69,8 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
 
                     b.Property<string>("ExpertiseArea")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -79,6 +79,10 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
 
                     b.Property<int?>("HighestQualification")
                         .HasColumnType("int");
+
+                    b.Property<string>("Institution")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -109,6 +113,10 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                         .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("PrimaryLanguage")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ReferralSource")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -414,7 +422,18 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsFeatured")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsProfileComplete")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsStripeChargesEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsStripeDetailsSubmitted")
                         .HasColumnType("bit");
 
                     b.Property<string>("LinkedInUrl")

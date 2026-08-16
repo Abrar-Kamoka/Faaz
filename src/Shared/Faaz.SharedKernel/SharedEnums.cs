@@ -16,14 +16,15 @@ public class SharedEnums
 
     public enum ApplicationDocumentType
     {
-        CV                        = 1,
-        ProfessionalCertification = 2,
-        DegreeOrDiploma           = 3,
-        GovernmentIssuedId        = 4,
-        ProofOfAddress            = 5,
-        ProfessionalMembership    = 6,
-        ReferenceLetter           = 7,
-        OtherSupportingDocument   = 8
+        CV                             = 1,
+        ProfessionalCertification      = 2,
+        DegreeOrDiploma                = 3,
+        GovernmentIssuedId             = 4,
+        ProofOfAddress                 = 5,
+        ProfessionalMembership         = 6,
+        ReferenceLetter                = 7,
+        OtherSupportingDocument        = 8,
+        AffiliationOrAppointmentLetter = 9
     }
 
     public enum HighestQualification

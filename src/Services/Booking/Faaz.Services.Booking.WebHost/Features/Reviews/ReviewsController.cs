@@ -49,6 +49,14 @@ public class ReviewsController : FaazApiController
         return Ok(ApiResponse.Ok(result));
     }
 
+    [HttpGet("admin")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> GetAllAdmin([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    {
+        var (items, total) = await _mediator.Send(new GetAllReviewsAdminQuery { Page = page, PageSize = pageSize }, ct);
+        return Ok(ApiResponse.Ok(new { Items = items, TotalCount = total, Page = page, PageSize = pageSize }));
+    }
+
     [HttpPatch("admin/{reviewId:guid}/visibility")]
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> SetVisibility(Guid reviewId, [FromBody] SetVisibilityDto dto)

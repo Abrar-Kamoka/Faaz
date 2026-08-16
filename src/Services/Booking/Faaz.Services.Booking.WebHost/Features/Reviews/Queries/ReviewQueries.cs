@@ -39,6 +39,37 @@ namespace Faaz.Services.Booking.WebHost.Features.Reviews.Queries
         }
     }
 
+    public class GetAllReviewsAdminQuery : IRequest<(IReadOnlyList<AdminReviewDto> Items, int TotalCount)>
+    {
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 20;
+    }
+
+    public class GetAllReviewsAdminQueryHandler : IRequestHandler<GetAllReviewsAdminQuery, (IReadOnlyList<AdminReviewDto> Items, int TotalCount)>
+    {
+        private readonly IReviewServices _reviewServices;
+
+        public GetAllReviewsAdminQueryHandler(IReviewServices r) { _reviewServices = r; }
+
+        public async Task<(IReadOnlyList<AdminReviewDto> Items, int TotalCount)> Handle(GetAllReviewsAdminQuery query, CancellationToken ct)
+        {
+            var (items, total) = await _reviewServices.GetAllForAdminAsync(query.Page, query.PageSize, ct);
+            var dtos = items.Select(r => new AdminReviewDto
+            {
+                Id                  = r.Id,
+                BookingId           = r.BookingId,
+                StudentUserId       = r.StudentUserId,
+                ConsultantProfileId = r.ConsultantProfileId,
+                Rating              = (int)r.Rating,
+                ReviewText          = r.ReviewText,
+                IsPublic            = r.IsPublic,
+                IsDeleted           = r.IsDeleted,
+                CreatedAt           = r.CreatedAt
+            }).ToList();
+            return (dtos, total);
+        }
+    }
+
     public class GetReviewSummaryQuery : IRequest<ReviewSummaryDto>
     {
         public Guid ConsultantProfileId { get; set; }

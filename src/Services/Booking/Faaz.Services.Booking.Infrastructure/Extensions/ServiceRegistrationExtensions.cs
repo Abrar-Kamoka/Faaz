@@ -42,12 +42,40 @@ public static class ServiceRegistrationExtensions
             .WithScopedLifetime());
 
         services.AddSingleton<IVideoService, LiveKitVideoService>();
-        services.AddSingleton<IConnectionMultiplexer>(_ =>
-            ConnectionMultiplexer.Connect(config["Redis:ConnectionString"] ?? "localhost:6379"));
+        services.AddMemoryCache();
+
+        // Local dev runs with no external dependencies — in-memory slot locking needs nothing installed.
+        // Staging/Production use Redis so the lock is shared across multiple service instances.
+        if (env.IsDevelopment())
+        {
+            services.AddSingleton<ISlotLockService, InMemorySlotLockService>();
+        }
+        else
+        {
+            services.AddSingleton<IConnectionMultiplexer>(_ =>
+            {
+                var redisOpts = ConfigurationOptions.Parse(config["Redis:ConnectionString"] ?? "localhost:6379");
+                redisOpts.AbortOnConnectFail = false; // don't crash startup if Redis is unavailable
+                return ConnectionMultiplexer.Connect(redisOpts);
+            });
+            services.AddSingleton<ISlotLockService, RedisSlotLockService>();
+        }
 
         services.AddHttpClient<IBookingConsultantClient, BookingConsultantClient>(client =>
         {
             client.BaseAddress = new Uri(config["Services:ConsultantServiceUrl"] ?? "https://localhost:55132");
+        }).ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            var handler = new HttpClientHandler();
+            if (env.IsDevelopment())
+                handler.ServerCertificateCustomValidationCallback =
+                    HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            return handler;
+        });
+
+        services.AddHttpClient<IBookingIdentityClient, BookingIdentityClient>(client =>
+        {
+            client.BaseAddress = new Uri(config["Services:IdentityServiceUrl"] ?? "https://localhost:55130");
         }).ConfigurePrimaryHttpMessageHandler(() =>
         {
             var handler = new HttpClientHandler();

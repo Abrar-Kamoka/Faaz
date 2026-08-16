@@ -86,6 +86,14 @@ namespace Faaz.Services.Booking.Infrastructure.Managers
                 .ToListAsync(ct);
         }
 
+        public async Task<IReadOnlyList<Booking>> GetExpiredReservedSlotsAsync(CancellationToken ct = default)
+        {
+            return await _db.Bookings
+                .Where(x => x.Status == global::Faaz.Services.Booking.Domain.BookingEnums.BookingStatus.SlotReserved
+                         && x.SlotReservedUntilUtc != null && x.SlotReservedUntilUtc <= DateTime.UtcNow)
+                .ToListAsync(ct);
+        }
+
         public async Task AddAsync(Booking booking, CancellationToken ct = default)
         {
             await _db.Bookings.AddAsync(booking, ct);
@@ -105,6 +113,49 @@ namespace Faaz.Services.Booking.Infrastructure.Managers
         public async Task SaveChangesAsync(CancellationToken ct = default)
         {
             await _db.SaveChangesAsync(ct);
+        }
+
+        public async Task<(IReadOnlyList<Booking> Items, int TotalCount)> GetForAdminAsync(
+            int page, int pageSize, int? status, Guid? consultantId, Guid? studentId, CancellationToken ct = default)
+        {
+            var query = _db.Bookings.IgnoreQueryFilters().AsQueryable();
+            if (status.HasValue)
+                query = query.Where(x => (int)x.Status == status.Value);
+            if (consultantId.HasValue)
+                query = query.Where(x => x.ConsultantUserId == consultantId.Value);
+            if (studentId.HasValue)
+                query = query.Where(x => x.StudentUserId == studentId.Value);
+
+            var total = await query.CountAsync(ct);
+            var items = await query
+                .OrderByDescending(x => x.ScheduledStartUtc)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+            return (items, total);
+        }
+
+        public async Task<BookingAnalyticsDto> GetAnalyticsAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
+        {
+            var query = _db.Bookings.IgnoreQueryFilters().AsQueryable();
+            if (from.HasValue) query = query.Where(x => x.CreatedAt >= from.Value);
+            if (to.HasValue)   query = query.Where(x => x.CreatedAt <= to.Value);
+
+            var all = await query.Select(x => new { x.Status, x.TotalChargedGbp, x.PlatformCommissionGbp }).ToListAsync(ct);
+
+            var completed  = all.Count(x => x.Status == global::Faaz.Services.Booking.Domain.BookingEnums.BookingStatus.Completed);
+            var cancelled  = all.Count(x => (int)x.Status >= 10 && (int)x.Status <= 16);
+            var disputed   = all.Count(x => x.Status == global::Faaz.Services.Booking.Domain.BookingEnums.BookingStatus.Disputed);
+            var active     = all.Count(x => x.Status == global::Faaz.Services.Booking.Domain.BookingEnums.BookingStatus.InProgress);
+
+            return new BookingAnalyticsDto(
+                TotalBookings:    all.Count,
+                CompletedBookings: completed,
+                CancelledBookings: cancelled,
+                DisputedBookings:  disputed,
+                TotalRevenueGbp:   all.Sum(x => x.TotalChargedGbp),
+                PlatformRevenueGbp: all.Sum(x => x.PlatformCommissionGbp),
+                ActiveSessions:    active);
         }
     }
 }

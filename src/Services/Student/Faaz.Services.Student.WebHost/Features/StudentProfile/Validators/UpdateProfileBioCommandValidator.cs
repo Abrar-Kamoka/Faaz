@@ -8,7 +8,5 @@ internal sealed class UpdateProfileBioCommandValidator : AbstractValidator<Updat
     public UpdateProfileBioCommandValidator()
     {
         RuleFor(x => x.PutModel.Bio).MaximumLength(500);
-        RuleFor(x => x.PutModel.ProfilePhotoUrl).Must(u => u is null || Uri.IsWellFormedUriString(u, UriKind.Absolute))
-            .WithMessage("Profile photo URL must be a valid URL.");
     }
 }

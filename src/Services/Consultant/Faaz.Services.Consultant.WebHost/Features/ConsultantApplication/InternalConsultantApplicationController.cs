@@ -2,6 +2,7 @@ using Faaz.Services.Consultant.Infrastructure.Interfaces;
 using Faaz.Services.Consultant.WebHost.Features.ConsultantApplication.Commands;
 using Faaz.Services.Consultant.WebHost.Features.ConsultantApplication.DTOs;
 using Faaz.Services.Consultant.WebHost.Features.ConsultantApplication.Queries;
+using Faaz.SharedKernel.Abstractions;
 using Faaz.SharedKernel.Results;
 using Faaz.SharedKernel.Security;
 using MediatR;
@@ -155,7 +156,10 @@ public class InternalConsultantApplicationController : ConsultantInternalControl
     [HttpGet("internal/applications/{applicationId:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetApplicationDetail(Guid applicationId, CancellationToken ct)
+    public async Task<IActionResult> GetApplicationDetail(
+        Guid applicationId,
+        [FromServices] IFileStorageService fileStorage,
+        CancellationToken ct)
     {
         if (!IsInternalRequest()) return StatusCode(403, ApiResponse.Fail(403, "Forbidden."));
         var a = await _appServices.GetByIdAsync(applicationId, ct);
@@ -170,6 +174,7 @@ public class InternalConsultantApplicationController : ConsultantInternalControl
             a.LastName,
             a.PhoneNumber,
             a.CurrentRole,
+            a.Institution,
             a.ExpertiseArea,
             a.YearsOfExperience,
             a.IsUkBased,
@@ -181,6 +186,7 @@ public class InternalConsultantApplicationController : ConsultantInternalControl
             a.PrimaryLanguage,
             a.PersonalStatement,
             ConsultationMode     = a.ConsultationMode?.ToString(),
+            a.ReferralSource,
             Status               = a.ApplicationStatus.ToString(),
             a.AdminNotes,
             a.Remarks,
@@ -193,7 +199,8 @@ public class InternalConsultantApplicationController : ConsultantInternalControl
                 d.FileName,
                 d.ContentType,
                 d.FileSizeBytes,
-                d.UploadedAt
+                d.UploadedAt,
+                FileUrl = fileStorage.GetUrl(d.FilePath)
             })
         });
     }

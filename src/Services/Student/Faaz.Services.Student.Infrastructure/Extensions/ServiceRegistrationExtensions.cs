@@ -33,6 +33,7 @@ public static class ServiceRegistrationExtensions
         services.AddMediatrWithBehaviors(webHostAssembly);
 
         services.AddScoped<IStudentProfileServices, StudentProfileManager>();
+        services.AddScoped<ISavedConsultantServices, SavedConsultantManager>();
 
         services.AddHttpContextAccessor();
 

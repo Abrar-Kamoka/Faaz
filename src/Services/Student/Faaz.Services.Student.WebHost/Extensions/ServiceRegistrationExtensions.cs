@@ -22,6 +22,19 @@ public static class ServiceRegistrationExtensions
             return handler;
         });
 
+        // Public endpoint — no X-Service-Key needed, same as a browser calling it via the Gateway.
+        services.AddHttpClient<IConsultantServiceClient, ConsultantServiceClient>(client =>
+        {
+            client.BaseAddress = new Uri(config["Services:ConsultantServiceUrl"] ?? "https://localhost:55132");
+        })
+        .ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            var handler = new HttpClientHandler();
+            if (env.IsDevelopment())
+                handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            return handler;
+        });
+
         return services;
     }
 }

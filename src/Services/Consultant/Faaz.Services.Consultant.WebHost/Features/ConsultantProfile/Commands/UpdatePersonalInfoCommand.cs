@@ -27,7 +27,8 @@ internal sealed class UpdatePersonalInfoCommandHandler : IRequestHandler<UpdateP
 
         profile.FullLegalName       = command.PutModel.FullLegalName;
         profile.DisplayName         = command.PutModel.DisplayName;
-        profile.ProfessionalPhotoUrl = command.PutModel.ProfessionalPhotoUrl;
+        // Photo is owned exclusively by PUT /consultant-profiles/{id}/photo — never touch it here,
+        // or every personal-info save silently wipes out whatever photo was just uploaded alongside it.
         profile.CurrentRole         = command.PutModel.CurrentRole;
         profile.Institution         = command.PutModel.Institution;
         profile.LinkedInUrl         = command.PutModel.LinkedInUrl;

@@ -25,6 +25,10 @@ public class ConsultantProfileDto
     public int MaxAdvanceBookingDays { get; set; }
     public bool IsProfileComplete { get; set; }
     public bool IsActive { get; set; }
+    public bool IsVerified { get; set; }
+    public decimal AverageRating { get; set; }
+    public int ReviewCount { get; set; }
+    public bool IsAvailableThisWeek { get; set; }
     public List<SessionTypeDto> SessionTypes { get; set; } = [];
     public List<WeeklySlotDto> AvailabilitySlots { get; set; } = [];
     public List<BlockedDateDto> BlockedDates { get; set; } = [];
@@ -65,6 +69,10 @@ public class ConsultantProfileSummaryDto
     public string[] SubjectAreas        { get; set; } = [];
     public int     YearsOfExperience    { get; set; }
     public decimal MinPriceGbp          { get; set; }
+    public bool    IsVerified           { get; set; }
+    public decimal AverageRating        { get; set; }
+    public int     ReviewCount          { get; set; }
+    public bool    IsAvailableThisWeek  { get; set; }
     public List<SessionTypeSummaryDto> SessionTypes { get; set; } = [];
 }
 

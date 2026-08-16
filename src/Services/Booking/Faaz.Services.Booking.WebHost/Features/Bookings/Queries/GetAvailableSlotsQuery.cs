@@ -2,7 +2,6 @@ using Faaz.Services.Booking.Infrastructure.Interfaces;
 using Faaz.Services.Booking.Infrastructure.Services;
 using Faaz.SharedKernel.Exceptions;
 using MediatR;
-using StackExchange.Redis;
 
 namespace Faaz.Services.Booking.WebHost.Features.Bookings.Queries;
 
@@ -18,16 +17,16 @@ internal sealed class GetAvailableSlotsQueryHandler : IRequestHandler<GetAvailab
 {
     private readonly IBookingConsultantClient _consultantClient;
     private readonly IBookingServices         _bookingServices;
-    private readonly IConnectionMultiplexer   _redis;
+    private readonly ISlotLockService         _slotLock;
 
     public GetAvailableSlotsQueryHandler(
         IBookingConsultantClient consultantClient,
         IBookingServices bookingServices,
-        IConnectionMultiplexer redis)
+        ISlotLockService slotLock)
     {
         _consultantClient = consultantClient;
         _bookingServices  = bookingServices;
-        _redis            = redis;
+        _slotLock         = slotLock;
     }
 
     public async Task<IReadOnlyList<DateTime>> Handle(GetAvailableSlotsQuery query, CancellationToken ct)
@@ -41,7 +40,6 @@ internal sealed class GetAvailableSlotsQueryHandler : IRequestHandler<GetAvailab
         var now          = DateTime.UtcNow;
         var noticeCutoff = now.AddHours(schedule.MinBookingNoticeHours);
         var maxLimit     = now.AddDays(schedule.MaxAdvanceBookingDays);
-        var db           = _redis.GetDatabase();
         var slots        = new List<DateTime>();
 
         for (var date = query.From; date <= query.To; date = date.AddDays(1))
@@ -64,7 +62,7 @@ internal sealed class GetAvailableSlotsQueryHandler : IRequestHandler<GetAvailab
                 if (candidate >= noticeCutoff && candidate <= maxLimit)
                 {
                     var lockKey = $"slot:{query.ConsultantProfileId}:{candidate:yyyyMMddHHmm}";
-                    var locked  = await db.KeyExistsAsync(lockKey);
+                    var locked  = await _slotLock.ExistsAsync(lockKey, ct);
                     if (!locked && !await _bookingServices.IsSlotTakenAsync(query.ConsultantProfileId, candidate, ct))
                         slots.Add(candidate);
                 }

@@ -42,6 +42,36 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Queries
         }
     }
 
+    public class GetStudentPaymentHistoryQuery : IRequest<(IReadOnlyList<PaymentHistoryItemDto> Items, int TotalCount)>
+    {
+        public Guid StudentUserId { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+    }
+
+    public class GetStudentPaymentHistoryQueryHandler : IRequestHandler<GetStudentPaymentHistoryQuery, (IReadOnlyList<PaymentHistoryItemDto> Items, int TotalCount)>
+    {
+        private readonly IPaymentServices _paymentServices;
+
+        public GetStudentPaymentHistoryQueryHandler(IPaymentServices p) { _paymentServices = p; }
+
+        public async Task<(IReadOnlyList<PaymentHistoryItemDto> Items, int TotalCount)> Handle(GetStudentPaymentHistoryQuery query, CancellationToken ct)
+        {
+            var (payments, total) = await _paymentServices.GetByStudentAsync(query.StudentUserId, query.Page, query.PageSize, ct);
+            var dtos = payments.Select(p => new PaymentHistoryItemDto
+            {
+                Id             = p.Id,
+                BookingId      = p.BookingId,
+                Amount         = p.Amount,
+                DiscountAmount = p.DiscountAmount,
+                PromoCodeUsed  = p.PromoCodeUsed,
+                Status         = p.Status.ToString(),
+                CreatedAt      = p.CreatedAt ?? DateTime.UtcNow
+            }).ToList();
+            return (dtos, total);
+        }
+    }
+
     public class GetConsultantEarningsQuery : IRequest<ConsultantEarningsDto>
     {
         public Guid ConsultantUserId { get; set; }

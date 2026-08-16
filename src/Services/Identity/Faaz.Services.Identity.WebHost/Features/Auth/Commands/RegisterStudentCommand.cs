@@ -44,19 +44,19 @@ internal sealed class RegisterStudentCommandHandler : IRequestHandler<RegisterSt
                 "An account with this email already exists.",
                 new { userId = existing.Id });
 
-        var (plaintext, hash) = _tokenService.GenerateOpaqueToken();
+        var (plaintext, _) = _tokenService.GenerateOpaqueToken();
 
         var user = new ApplicationUser
         {
-            UserName = command.PostModel.Email,
-            Email    = command.PostModel.Email,
-            FirstName = command.PostModel.FirstName,
-            LastName  = command.PostModel.LastName,
-            Role     = UserRole.Student,
-            Status   = UserStatus.PendingEmailVerification,
-            IsEmailVerified = false,
-            EmailVerificationToken       = hash,
-            EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24)
+            UserName                     = command.PostModel.Email,
+            Email                        = command.PostModel.Email,
+            FirstName                    = command.PostModel.FirstName,
+            LastName                     = command.PostModel.LastName,
+            Role                         = UserRole.Student,
+            Status                       = UserStatus.PendingEmailVerification,
+            IsEmailVerified              = false,
+            EmailVerificationToken       = plaintext,
+            EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24),
         };
 
         var result = await _userManager.CreateAsync(user, command.PostModel.Password);

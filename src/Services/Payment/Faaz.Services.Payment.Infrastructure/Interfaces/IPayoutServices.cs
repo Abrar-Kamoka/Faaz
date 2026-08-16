@@ -10,4 +10,7 @@ public interface IPayoutServices
     Task AddAsync(Payout payout, CancellationToken ct = default);
     Task<int> NewSerialNumberAsync(CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
+
+    Task<(IReadOnlyList<Payout> Items, int TotalCount)> GetAllForAdminAsync(
+        int page, int pageSize, string? status, CancellationToken ct = default);
 }

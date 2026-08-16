@@ -32,8 +32,20 @@
     <Project Path="src/Services/Payment/Faaz.Services.Payment.Infrastructure/Faaz.Services.Payment.Infrastructure.csproj" />
     <Project Path="src/Services/Payment/Faaz.Services.Payment.WebHost/Faaz.Services.Payment.WebHost.csproj" />
   </Folder>
+  <Folder Name="/Services/Administration/">
+    <Project Path="src/Services/Administration/Faaz.Services.Administration.Domain/Faaz.Services.Administration.Domain.csproj" />
+    <Project Path="src/Services/Administration/Faaz.Services.Administration.Infrastructure/Faaz.Services.Administration.Infrastructure.csproj" />
+    <Project Path="src/Services/Administration/Faaz.Services.Administration.WebHost/Faaz.Services.Administration.WebHost.csproj" />
+  </Folder>
+  <Folder Name="/Services/BackgroundJobs/">
+    <Project Path="src/Services/BackgroundJobs/Faaz.Services.BackgroundJobs.WebHost/Faaz.Services.BackgroundJobs.WebHost.csproj" />
+  </Folder>
   <Folder Name="/Shared/">
     <Project Path="src/Shared/Faaz.BuildingBlocks/Faaz.BuildingBlocks.csproj" />
     <Project Path="src/Shared/Faaz.SharedKernel/Faaz.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="tests/Faaz.Services.Identity.IntegrationTests/Faaz.Services.Identity.IntegrationTests.csproj" />
+    <Project Path="tests/Faaz.Services.Booking.IntegrationTests/Faaz.Services.Booking.IntegrationTests.csproj" />
   </Folder>
 </Solution>

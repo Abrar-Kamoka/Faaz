@@ -6,9 +6,13 @@ namespace Faaz.Services.Consultant.WebHost.Features.ConsultantProfile.Queries;
 
 public class ListConsultantProfilesQuery : IRequest<(IReadOnlyList<ConsultantProfileSummaryDto> Items, int Total)>
 {
-    public string? Subject  { get; set; }
-    public int     Page     { get; set; } = 1;
-    public int     PageSize { get; set; } = 10;
+    public string? Subject      { get; set; }
+    public string? Search       { get; set; }
+    public int?    SessionType  { get; set; }
+    public int?    StudyLevel   { get; set; }
+    public bool?   VerifiedOnly { get; set; }
+    public int     Page         { get; set; } = 1;
+    public int     PageSize     { get; set; } = 10;
 }
 
 internal sealed class ListConsultantProfilesQueryHandler
@@ -24,7 +28,9 @@ internal sealed class ListConsultantProfilesQueryHandler
     public async Task<(IReadOnlyList<ConsultantProfileSummaryDto> Items, int Total)> Handle(
         ListConsultantProfilesQuery query, CancellationToken ct)
     {
-        var (profiles, total) = await _profileServices.GetAllActiveAsync(query.Subject, query.Page, query.PageSize, ct);
+        var (profiles, total) = await _profileServices.GetAllActiveAsync(
+            query.Subject, query.Search, query.SessionType, query.StudyLevel, query.VerifiedOnly,
+            query.Page, query.PageSize, ct);
 
         var dtos = profiles.Select(p => new ConsultantProfileSummaryDto
         {
@@ -34,9 +40,13 @@ internal sealed class ListConsultantProfilesQueryHandler
             CurrentRole          = p.CurrentRole,
             Institution          = p.Institution,
             ProfessionalPhotoUrl = p.ProfessionalPhotoUrl,
-            SubjectAreas         = p.SubjectAreas,
+            SubjectAreas         = p.SubjectAreas ?? [],
             YearsOfExperience    = p.YearsOfExperience,
             MinPriceGbp          = p.SessionTypes.Any() ? p.SessionTypes.Min(s => s.PriceGbp) : 0m,
+            IsVerified           = p.IsFeatured,
+            AverageRating        = 0m,
+            ReviewCount          = 0,
+            IsAvailableThisWeek  = p.AvailabilitySlots.Any(),
             SessionTypes         = p.SessionTypes.OrderBy(s => s.SortOrder).Select(s => new SessionTypeSummaryDto
             {
                 Id              = s.Id,

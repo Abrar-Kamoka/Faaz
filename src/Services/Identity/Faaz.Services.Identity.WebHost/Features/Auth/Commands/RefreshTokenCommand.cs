@@ -1,6 +1,7 @@
 using Faaz.Services.Identity.Domain.Entities;
 using Faaz.Services.Identity.Infrastructure.Interfaces.Auth;
 using Faaz.Services.Identity.Infrastructure.Interfaces.Token;
+using Faaz.Services.Identity.Infrastructure.Services;
 using Faaz.Services.Identity.WebHost.Features.Auth.DTOs;
 using Faaz.SharedKernel.Security;
 using MediatR;
@@ -21,6 +22,7 @@ internal sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenC
     private readonly IHttpContextAccessor _httpContext;
     private readonly IRefreshTokenServices _refreshTokenServices;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly ITokenService _tokenService;
     private readonly ILogger<RefreshTokenCommandHandler> _logger;
 
@@ -28,12 +30,14 @@ internal sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenC
         IHttpContextAccessor httpContext,
         IRefreshTokenServices refreshTokenServices,
         UserManager<ApplicationUser> userManager,
+        RoleManager<ApplicationRole> roleManager,
         ITokenService tokenService,
         ILogger<RefreshTokenCommandHandler> logger)
     {
         _httpContext = httpContext;
         _refreshTokenServices = refreshTokenServices;
         _userManager = userManager;
+        _roleManager = roleManager;
         _tokenService = tokenService;
         _logger = logger;
     }
@@ -67,20 +71,23 @@ internal sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenC
         if (user is null)
             throw new UnauthorizedAccessException("User not found.");
 
-        var newAccessToken = _tokenService.GenerateAccessToken(user, out var newJti);
+        var permissions = await PermissionResolver.GetPermissionsAsync(_userManager, _roleManager, user);
+        var newAccessToken = _tokenService.GenerateAccessToken(user, out var newJti, permissions);
         var (newRtPlaintext, newRtHash) = _tokenService.GenerateRefreshToken();
         var clientIp = command.IpAddress ?? ctx.Connection.RemoteIpAddress?.ToString();
 
         existing.Token       = newRtHash;
         existing.JwtId       = newJti;
-        existing.ExpiresAt   = DateTime.UtcNow.AddDays(7);
+        // Preserve the original "remember me" choice through rotation rather than resetting
+        // to a fixed window — otherwise a non-remembered session would quietly become persistent.
+        existing.ExpiresAt   = DateTime.UtcNow.AddDays(existing.RememberMe ? 30 : 1);
         existing.CreatedByIp = clientIp;
 
         await _refreshTokenServices.SaveChangesAsync(ct);
 
         _logger.LogInformation("Token refreshed for UserId: {UserId}", user.Id);
 
-        return new AuthResponseDto(AccessToken: newAccessToken, RefreshToken: newRtPlaintext);
+        return new AuthResponseDto(AccessToken: newAccessToken, RefreshToken: newRtPlaintext, RememberMe: existing.RememberMe);
     }
 
     private static string HashToken(string token) => TokenHasher.Hash(token);

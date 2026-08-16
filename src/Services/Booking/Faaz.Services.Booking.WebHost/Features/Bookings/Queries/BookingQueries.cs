@@ -1,5 +1,6 @@
 using Faaz.Services.Booking.Domain.Entities;
 using Faaz.Services.Booking.Infrastructure.Interfaces;
+using Faaz.Services.Booking.Infrastructure.Services;
 using Faaz.Services.Booking.WebHost.Features.Bookings.DTOs;
 using Faaz.SharedKernel.Exceptions;
 using MediatR;
@@ -19,8 +20,10 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Queries
     public class GetBookingByIdQueryHandler : IRequestHandler<GetBookingByIdQuery, BookingDetailDto>
     {
         private readonly IBookingServices _bookingServices;
+        private readonly IBookingIdentityClient _identityClient;
 
-        public GetBookingByIdQueryHandler(IBookingServices b) { _bookingServices = b; }
+        public GetBookingByIdQueryHandler(IBookingServices b, IBookingIdentityClient identityClient)
+        { _bookingServices = b; _identityClient = identityClient; }
 
         public async Task<BookingDetailDto> Handle(GetBookingByIdQuery query, CancellationToken ct)
         {
@@ -34,7 +37,15 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Queries
             if (!isAdmin && !isStudent && !isConsultant)
                 throw new ForbiddenException("You do not have access to this booking.");
 
-            return MapToDetail(booking);
+            var dto = MapToDetail(booking);
+            // Booking doesn't own user profile data — best-effort enrichment from Identity;
+            // a lookup failure shouldn't break loading the booking itself, just leave the name blank.
+            var studentNameTask    = _identityClient.GetUserNameAsync(booking.StudentUserId, ct);
+            var consultantNameTask = _identityClient.GetUserNameAsync(booking.ConsultantUserId, ct);
+            await Task.WhenAll(studentNameTask, consultantNameTask);
+            dto.StudentName    = studentNameTask.Result?.FullName;
+            dto.ConsultantName = consultantNameTask.Result?.FullName;
+            return dto;
         }
 
         private static BookingDetailDto MapToDetail(Booking b) => new()
@@ -44,19 +55,29 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Queries
             StudentUserId       = b.StudentUserId,
             ConsultantUserId    = b.ConsultantUserId,
             ConsultantProfileId = b.ConsultantProfileId,
+            SessionTypeId       = b.SessionTypeId,
             SessionTypeName     = b.SessionTypeName,
             ScheduledStartUtc   = b.ScheduledStartUtc,
             ScheduledEndUtc     = b.ScheduledEndUtc,
             DurationMinutes     = b.DurationMinutes,
             CallType            = b.CallType.ToString(),
             Status              = b.Status.ToString(),
+            CreatedAt           = b.CreatedAt,
             SessionPriceGbp     = b.SessionPriceGbp,
             TotalChargedGbp     = b.TotalChargedGbp,
+            PlatformCommissionGbp = b.PlatformCommissionGbp,
             StudentTimezone     = b.StudentTimezone,
             SessionBrief        = b.SessionBrief,
+            SlotReservedUntilUtc = b.SlotReservedUntilUtc,
+            ExpiresAt           = b.ExpiresAt,
             AcceptedAt          = b.AcceptedAt,
             CompletedAt         = b.CompletedAt,
             SettledAt = b.SettledAt,
+            RefundPercentage = b.RefundPercentage,
+            DisputeReason = b.DisputeReason,
+            DisputeResolution = b.DisputeResolution,
+            DisputeResolutionNote = b.DisputeResolutionNote,
+            DisputeResolvedAt = b.DisputeResolvedAt,
             Session   = b.Session is null ? null : new SessionDto
             {
                 Id                    = b.Session.Id,
@@ -96,17 +117,23 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Queries
 
             var dtos = items.Select(b => new BookingListDto
             {
-                Id                = b.Id,
-                SrNo              = b.SrNo,
-                Status            = b.Status.ToString(),
-                SessionTypeName   = b.SessionTypeName,
-                DurationMinutes   = b.DurationMinutes,
-                SessionPriceGbp   = b.SessionPriceGbp,
-                TotalChargedGbp   = b.TotalChargedGbp,
-                CallType          = b.CallType.ToString(),
-                ScheduledStartUtc = b.ScheduledStartUtc,
-                StudentTimezone   = b.StudentTimezone,
-                HasReview         = b.Review is not null
+                Id                   = b.Id,
+                SrNo                 = b.SrNo,
+                Status               = b.Status.ToString(),
+                SessionTypeName      = b.SessionTypeName,
+                DurationMinutes      = b.DurationMinutes,
+                SessionPriceGbp      = b.SessionPriceGbp,
+                TotalChargedGbp      = b.TotalChargedGbp,
+                CallType             = b.CallType.ToString(),
+                ScheduledStartUtc    = b.ScheduledStartUtc,
+                ScheduledEndUtc      = b.ScheduledEndUtc,
+                StudentTimezone      = b.StudentTimezone,
+                HasReview            = b.Review is not null,
+                RefundPercentage     = b.RefundPercentage,
+                ConsultantUserId     = b.ConsultantUserId,
+                ConsultantProfileId  = b.ConsultantProfileId,
+                SlotReservedUntilUtc = b.SlotReservedUntilUtc,
+                ExpiresAt            = b.ExpiresAt,
             }).ToList();
 
             return (dtos, total);

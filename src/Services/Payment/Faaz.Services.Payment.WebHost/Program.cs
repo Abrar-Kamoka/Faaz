@@ -21,12 +21,15 @@ try
 
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddFaazOpenTelemetry(builder.Configuration, "faaz-payment");
     builder.Services.AddPaymentInfrastructure(builder.Configuration, typeof(Program).Assembly, builder.Environment);
     builder.Services.AddFaazRabbitMq(builder.Configuration, builder.Environment, x =>
     {
+        x.AddConsumer<BookingConfirmedConsumer>();
         x.AddConsumer<BookingCancelledConsumer>();
         x.AddConsumer<SessionCompletedConsumer>();
         x.AddConsumer<RefundAppealApprovedConsumer>();
+        x.AddConsumer<DisputeResolvedConsumer>();
         x.AddConsumer<PayoutReleasedConsumer>();
     });
 

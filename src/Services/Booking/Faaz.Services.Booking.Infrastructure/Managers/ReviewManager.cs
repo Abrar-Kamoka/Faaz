@@ -63,6 +63,18 @@ internal sealed class ReviewManager : IReviewServices
         return await _db.Reviews.AnyAsync(x => x.BookingId == bookingId, ct);
     }
 
+    public async Task<(IReadOnlyList<Review> Items, int TotalCount)> GetAllForAdminAsync(
+        int page, int pageSize, CancellationToken ct = default)
+    {
+        var query = _db.Reviews
+            .IgnoreQueryFilters()
+            .Include(r => r.Booking)
+            .OrderByDescending(r => r.CreatedAt);
+        var total = await query.CountAsync(ct);
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        return (items, total);
+    }
+
     public async Task AddAsync(Review review, CancellationToken ct = default)
     {
         await _db.Reviews.AddAsync(review, ct);

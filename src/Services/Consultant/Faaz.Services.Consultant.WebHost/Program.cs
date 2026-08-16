@@ -22,6 +22,7 @@ try
 
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddFaazOpenTelemetry(builder.Configuration, "faaz-consultant");
     builder.Services.AddConsultantInfrastructure(builder.Configuration, typeof(Program).Assembly, builder.Environment);
     builder.Services.AddFaazRabbitMq(builder.Configuration, builder.Environment, x =>
     {

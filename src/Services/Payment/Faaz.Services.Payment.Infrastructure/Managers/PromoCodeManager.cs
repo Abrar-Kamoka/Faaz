@@ -14,8 +14,19 @@ internal sealed class PromoCodeManager : IPromoCodeServices
     public async Task<PromoCode?> GetByCodeAsync(string code, CancellationToken ct = default)
         => await _db.PromoCodes.FirstOrDefaultAsync(x => x.Code == code && x.IsActive, ct);
 
+    public async Task<bool> ExistsByCodeAsync(string code, CancellationToken ct = default)
+        => await _db.PromoCodes.IgnoreQueryFilters().AnyAsync(x => x.Code == code, ct);
+
     public async Task<PromoCode?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        => await _db.PromoCodes.FirstOrDefaultAsync(x => x.Id == id, ct);
+        => await _db.PromoCodes.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == id, ct);
+
+    public async Task<(IReadOnlyList<PromoCode> Items, int Total)> GetPagedAsync(int page, int pageSize, CancellationToken ct = default)
+    {
+        var q     = _db.PromoCodes.IgnoreQueryFilters().AsQueryable();
+        var total = await q.CountAsync(ct);
+        var items = await q.OrderByDescending(x => x.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        return (items, total);
+    }
 
     public async Task AddAsync(PromoCode promoCode, CancellationToken ct = default)
         => await _db.PromoCodes.AddAsync(promoCode, ct);

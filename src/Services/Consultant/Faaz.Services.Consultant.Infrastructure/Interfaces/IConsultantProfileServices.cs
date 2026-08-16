@@ -15,9 +15,11 @@ public interface IConsultantProfileServices
 
     // List all active profiles for student browsing.
     Task<(IReadOnlyList<ConsultantProfile> Items, int Total)> GetAllActiveAsync(
-        string? subjectFilter, int page, int pageSize, CancellationToken ct = default);
+        string? subjectFilter, string? search, int? sessionType, int? studyLevel, bool? verifiedOnly,
+        int page, int pageSize, CancellationToken ct = default);
 
     Task<ConsultantProfile?> GetByApplicationIdAsync(Guid applicationId, CancellationToken ct = default);
+    Task<ConsultantProfile?> GetByStripeAccountIdAsync(string stripeAccountId, CancellationToken ct = default);
     Task<bool> ExistsForUserAsync(Guid userId, CancellationToken ct = default);
     Task AddAsync(ConsultantProfile profile, CancellationToken ct = default);
     Task AddSessionTypeAsync(ConsultantSessionType sessionType, CancellationToken ct = default);
@@ -28,4 +30,13 @@ public interface IConsultantProfileServices
     // Returns true when activation happened (first time only).
     // Must be called BEFORE SaveChangesAsync so activation is part of the same save.
     Task<bool> TryAutoActivateAsync(ConsultantProfile profile, CancellationToken ct = default);
+
+    // Admin-only: all profiles including inactive, with Application loaded.
+    Task<(IReadOnlyList<ConsultantProfile> Items, int Total)> GetAllForAdminAsync(int page, int pageSize, CancellationToken ct = default);
+
+    // Fetch with Application + SessionTypes (for admin detail / suspend-restore).
+    Task<ConsultantProfile?> GetByUserIdWithApplicationAsync(Guid userId, CancellationToken ct = default);
+
+    // Admin: featured consultants list.
+    Task<(IReadOnlyList<ConsultantProfile> Items, int Total)> GetFeaturedAsync(int page, int pageSize, CancellationToken ct = default);
 }

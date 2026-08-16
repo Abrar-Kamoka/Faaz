@@ -145,6 +145,20 @@ public static class ServiceRegistrationExtensions
                     return role == "2" && status == "4";
                 }));
 
+            // For the Stripe Connect self-service endpoints specifically: ConsultantOnly's
+            // consultant_status == "4" (Active) requirement is a deadlock here, since a consultant
+            // can only reach Active by having Stripe charges enabled (see
+            // ProfileCompletenessChecker/TryAutoActivateAsync in the Consultant service), which
+            // requires completing Stripe onboarding, which requires calling this endpoint first.
+            // Any authenticated consultant — whatever their application status — may start/check
+            // their own Stripe onboarding.
+            opts.AddPolicy("ConsultantSelfService", policy =>
+                policy.RequireAssertion(ctx =>
+                {
+                    var role = ctx.User.FindFirst("role")?.Value;
+                    return role == "2" || role == "3";
+                }));
+
             opts.AddPolicy("BookingParticipantOrAdmin", policy =>
                 policy.RequireAssertion(ctx => ctx.User.FindFirst("role")?.Value is "1" or "2" or "3"));
 

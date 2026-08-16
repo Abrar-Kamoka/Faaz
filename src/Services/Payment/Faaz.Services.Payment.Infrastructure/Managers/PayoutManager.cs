@@ -39,4 +39,16 @@ internal sealed class PayoutManager : IPayoutServices
 
     public async Task SaveChangesAsync(CancellationToken ct = default)
         => await _db.SaveChangesAsync(ct);
+
+    public async Task<(IReadOnlyList<Payout> Items, int TotalCount)> GetAllForAdminAsync(
+        int page, int pageSize, string? status, CancellationToken ct = default)
+    {
+        var query = _db.Payouts.IgnoreQueryFilters().AsQueryable();
+        if (!string.IsNullOrEmpty(status) && Enum.TryParse<global::Faaz.Services.Payment.Domain.PaymentEnums.PayoutStatus>(status, true, out var s))
+            query = query.Where(x => x.Status == s);
+        var total = await query.CountAsync(ct);
+        var items = await query.OrderByDescending(x => x.CreatedAt)
+            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        return (items, total);
+    }
 }

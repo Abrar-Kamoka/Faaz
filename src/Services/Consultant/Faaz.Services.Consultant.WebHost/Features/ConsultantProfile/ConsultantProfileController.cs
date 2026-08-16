@@ -4,6 +4,7 @@ using Faaz.Services.Consultant.WebHost.Features.ConsultantProfile.Commands;
 using Faaz.Services.Consultant.WebHost.Features.ConsultantProfile.DTOs;
 using Faaz.Services.Consultant.WebHost.Features.ConsultantProfile.Queries;
 using Faaz.SharedKernel.Abstractions;
+using Faaz.SharedKernel.Exceptions;
 using Faaz.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -23,7 +24,7 @@ public class ConsultantProfileController : FaazApiController
     }
 
     [HttpGet]
-    [Authorize]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListProfiles([FromQuery] ListConsultantProfilesQuery query, CancellationToken ct)
     {
@@ -32,12 +33,29 @@ public class ConsultantProfileController : FaazApiController
     }
 
     [HttpGet("{userId:guid}")]
-    [Authorize(Policy = "ConsultantSetupOrActive")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<ConsultantProfileDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProfile(Guid userId, CancellationToken ct)
     {
-        var result = await _mediator.Send(new GetConsultantProfileQuery { UserId = userId }, ct);
+        ConsultantProfileDto result;
+        try
+        {
+            result = await _mediator.Send(new GetConsultantProfileQuery { UserId = userId }, ct);
+        }
+        catch (NotFoundException)
+        {
+            // Auto-create stub only for the profile owner (i.e. the consultant themselves visiting
+            // their own profile for the first time after the email-verification event was missed).
+            // Students visiting a non-existent profile just receive a 404.
+            if (!IsOwner(userId))
+                return NotFound(ApiResponse.Fail(404, "Consultant profile not found."));
+
+            var callerEmail = GetCallerEmail();
+            try { await _mediator.Send(new CreateProfileStubCommand { UserId = userId, Email = callerEmail }, ct); }
+            catch (NotFoundException) { return NotFound(ApiResponse.Fail(404, "Consultant profile not found.")); }
+            result = await _mediator.Send(new GetConsultantProfileQuery { UserId = userId }, ct);
+        }
         return Ok(ApiResponse.Ok(result));
     }
 

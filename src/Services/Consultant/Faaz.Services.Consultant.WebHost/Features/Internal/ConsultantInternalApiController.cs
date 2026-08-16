@@ -130,6 +130,55 @@ public class ConsultantInternalApiController : ConsultantInternalController
         if (profile is null)
             return NotFound(ApiResponse.Fail(404, "Consultant profile not found."));
 
-        return Ok(new { stripeConnectAccountId = profile.StripeAccountId });
+        return Ok(new
+        {
+            stripeConnectAccountId = profile.StripeAccountId,
+            detailsSubmitted       = profile.IsStripeDetailsSubmitted,
+            chargesEnabled         = profile.IsStripeChargesEnabled
+        });
     }
+
+    [HttpPut("stripe-account")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetStripeAccount([FromQuery] Guid userId, [FromBody] SetStripeAccountDto dto, CancellationToken ct)
+    {
+        if (!IsInternalRequest()) return StatusCode(403, ApiResponse.Fail(403, "Forbidden."));
+
+        var profile = await _profileServices.GetByUserIdAsync(userId, ct);
+        if (profile is null)
+            return NotFound(ApiResponse.Fail(404, "Consultant profile not found."));
+
+        profile.StripeAccountId = dto.StripeConnectAccountId;
+        await _profileServices.SaveChangesAsync(ct);
+        return Ok(ApiResponse.NoContent());
+    }
+
+    // Called from Payment service's Stripe "account.updated" webhook handler — the authoritative,
+    // reactive signal for onboarding/capability status per Stripe's recommended integration pattern.
+    // Looked up by Stripe account ID (not userId) since that's the only correlation key a Connect
+    // webhook payload carries.
+    [HttpPut("stripe-status")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetStripeStatus([FromBody] SetStripeStatusDto dto, CancellationToken ct)
+    {
+        if (!IsInternalRequest()) return StatusCode(403, ApiResponse.Fail(403, "Forbidden."));
+
+        var profile = await _profileServices.GetByStripeAccountIdAsync(dto.StripeConnectAccountId, ct);
+        if (profile is null)
+            return NotFound(ApiResponse.Fail(404, "Consultant profile not found for this Stripe account."));
+
+        profile.IsStripeDetailsSubmitted = dto.DetailsSubmitted;
+        profile.IsStripeChargesEnabled   = dto.ChargesEnabled;
+
+        await _profileServices.TryAutoActivateAsync(profile, ct);
+        await _profileServices.SaveChangesAsync(ct);
+        return Ok(ApiResponse.NoContent());
+    }
+
+    public record SetStripeAccountDto(string StripeConnectAccountId);
+    public record SetStripeStatusDto(string StripeConnectAccountId, bool DetailsSubmitted, bool ChargesEnabled);
 }

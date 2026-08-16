@@ -14,8 +14,13 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
         builder.Property(x => x.ExtraField1).HasMaxLength(500);
         builder.Property(x => x.ExtraField2).HasMaxLength(500);
 
+        builder.HasOne(x => x.Session)
+               .WithMany()
+               .HasForeignKey(x => x.SessionId)
+               .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasQueryFilter(x => !x.IsDeleted);
-        builder.HasIndex(x => x.BookingId).IsUnique(); // one review per booking
+        builder.HasIndex(x => x.BookingId).IsUnique();
         builder.HasIndex(x => new { x.ConsultantProfileId, x.IsPublic });
     }
 }

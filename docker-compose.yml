@@ -56,6 +56,14 @@ services:
         condition: service_started
       consultant:
         condition: service_started
+      booking:
+        condition: service_started
+      payment:
+        condition: service_started
+      notification:
+        condition: service_started
+      administration:
+        condition: service_started
     networks:
       - faaz-net
 
@@ -92,7 +100,7 @@ services:
   identity:
     build:
       context: .
-      dockerfile: src/Services/Identity/Faaz.Services.Identity/Dockerfile
+      dockerfile: src/Services/Identity/Faaz.Services.Identity.WebHost/Dockerfile
     ports:
       - "5101:8080"
     environment:
@@ -126,7 +134,7 @@ services:
   student:
     build:
       context: .
-      dockerfile: src/Services/Student/Faaz.Services.Student/Dockerfile
+      dockerfile: src/Services/Student/Faaz.Services.Student.WebHost/Dockerfile
     ports:
       - "5102:8080"
     environment:
@@ -151,7 +159,7 @@ services:
   consultant:
     build:
       context: .
-      dockerfile: src/Services/Consultant/Faaz.Services.Consultant/Dockerfile
+      dockerfile: src/Services/Consultant/Faaz.Services.Consultant.WebHost/Dockerfile
     ports:
       - "5103:8080"
     environment:
@@ -197,6 +205,7 @@ services:
       Smtp__FromEmail: "${SMTP_FROM_EMAIL}"
       Smtp__FromName: "${SMTP_FROM_NAME}"
       Smtp__UseSsl: "${SMTP_USE_SSL}"
+      FrontendBaseUrl: "${FRONTEND_BASE_URL}"
       Serilog__SeqUrl: "${SEQ_URL}"
     depends_on:
       mssql:
@@ -275,6 +284,83 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    networks:
+      - faaz-net
+
+  administration:
+    build:
+      context: .
+      dockerfile: src/Services/Administration/Faaz.Services.Administration.WebHost/Dockerfile
+    container_name: faaz-administration
+    ports:
+      - "55136:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__FaazDb: "${DB_CONNECTION_STRING}"
+      Jwt__Authority: "http://identity:8080"
+      Jwt__Audience: "faaz-api"
+      ServiceApiKey: "${SERVICE_API_KEY}"
+      Services__ConsultantServiceUrl: "http://consultant:8080"
+      Services__BookingServiceUrl: "http://booking:8080"
+      Services__PaymentServiceUrl: "http://payment:8080"
+      Services__IdentityServiceUrl: "http://identity:8080"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__VHost: /
+      RabbitMq__Username: guest
+      RabbitMq__Password: guest
+      Serilog__SeqUrl: "${SEQ_URL}"
+    depends_on:
+      mssql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      identity:
+        condition: service_started
+    networks:
+      - faaz-net
+
+  backgroundjobs:
+    build:
+      context: .
+      dockerfile: src/Services/BackgroundJobs/Faaz.Services.BackgroundJobs.WebHost/Dockerfile
+    container_name: faaz-backgroundjobs
+    ports:
+      - "55137:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__FaazDb: "${DB_CONNECTION_STRING}"
+      Jwt__Authority: "http://identity:8080"
+      Jwt__Audience: "faaz-api"
+      ServiceApiKey: "${SERVICE_API_KEY}"
+      Services__ConsultantServiceUrl: "http://consultant:8080"
+      Services__BookingServiceUrl: "http://booking:8080"
+      Services__PaymentServiceUrl: "http://payment:8080"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__VHost: /
+      RabbitMq__Username: guest
+      RabbitMq__Password: guest
+      LiveKit__ApiKey: "${LIVEKIT_API_KEY}"
+      LiveKit__ApiSecret: "${LIVEKIT_API_SECRET}"
+      LiveKit__ServerUrl: "${LIVEKIT_SERVER_URL}"
+      Serilog__SeqUrl: "${SEQ_URL}"
+    depends_on:
+      mssql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      booking:
+        condition: service_started
+    networks:
+      - faaz-net
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4317:4317"     # OTLP gRPC
+      - "4318:4318"     # OTLP HTTP
     networks:
       - faaz-net
 

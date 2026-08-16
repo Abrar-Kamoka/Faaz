@@ -12,6 +12,7 @@ public class StudentDbContext : DbContext
     public DbSet<SixthFormData> SixthFormData => Set<SixthFormData>();
     public DbSet<UndergraduateData> UndergraduateData => Set<UndergraduateData>();
     public DbSet<PostgraduateData> PostgraduateData => Set<PostgraduateData>();
+    public DbSet<SavedConsultant> SavedConsultants => Set<SavedConsultant>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

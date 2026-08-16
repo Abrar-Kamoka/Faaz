@@ -1,0 +1,44 @@
+namespace Faaz.Services.Administration.Domain;
+
+public static class AdminEnums
+{
+    public enum AdminAction
+    {
+        DeactivateUser            = 1,
+        ReactivateUser            = 2,
+        ApproveConsultant         = 3,
+        RejectConsultant          = 4,
+        RequestConsultantRevision = 5,
+        SuspendConsultant         = 6,
+        RestoreConsultant         = 7,
+        ApproveRefundAppeal       = 8,
+        RejectRefundAppeal        = 9,
+        PutPayoutOnHold           = 10,
+        UpdatePlatformConfig      = 11,
+        HideReview                = 12,
+        ShowReview                = 13,
+        AddDisputeNote            = 14,
+        GdprExport                = 15,
+        CreateStaff               = 16,
+        UpdateStaffRole           = 17,
+        DeactivateStaff           = 18,
+        ReactivateStaff           = 19,
+        CreateRole                = 20,
+        UpdateRole                = 21,
+        DeleteRole                = 22,
+        GrantPermission           = 23,
+        RevokePermission          = 24,
+        ProcessRefund             = 25,
+        CreateUniversity          = 26,
+        UpdateUniversity          = 27,
+        DeleteUniversity          = 28,
+        CreateSubject             = 29,
+        UpdateSubject             = 30,
+        DeleteSubject             = 31,
+        FeatureConsultant         = 32,
+        UnfeatureConsultant       = 33,
+        CreatePromoCode           = 34,
+        UpdatePromoCode           = 35,
+        DeactivatePromoCode       = 36
+    }
+}
