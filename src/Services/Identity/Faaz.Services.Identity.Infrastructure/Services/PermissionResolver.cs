@@ -4,14 +4,14 @@ using static Faaz.Services.Identity.Domain.IdentityEnums;
 
 namespace Faaz.Services.Identity.Infrastructure.Services;
 
-// Only Admin-tier accounts ever get a "permission" claim — Student/Consultant authorization keeps
+// Only SuperAdmin-tier accounts ever get a "permission" claim — Student/Consultant authorization keeps
 // running entirely off the "role" claim and never queries roles/claims at all.
 public static class PermissionResolver
 {
     public static async Task<List<string>> GetPermissionsAsync(
         UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, ApplicationUser user)
     {
-        if (user.Role != UserRole.Admin) return [];
+        if (user.Role != UserRole.SuperAdmin) return [];
 
         var roleNames = await userManager.GetRolesAsync(user);
         var permissions = new HashSet<string>();

@@ -36,9 +36,6 @@ public class ConsultantProfile : BaseSoftDeleteModel
     // live from Stripe on this service's own request path, per Stripe's recommended integration pattern.
     public bool IsStripeDetailsSubmitted { get; set; } = false;
     public bool IsStripeChargesEnabled { get; set; } = false;
-    public string? Remarks { get; set; }
-    public string? ExtraField1 { get; set; }
-    public string? ExtraField2 { get; set; }
 
     public ConsultantApplication Application { get; set; } = null!;
     public ICollection<ConsultantSessionType> SessionTypes { get; set; } = [];

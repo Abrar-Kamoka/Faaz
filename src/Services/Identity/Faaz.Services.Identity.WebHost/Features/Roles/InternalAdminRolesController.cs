@@ -50,7 +50,7 @@ public class InternalAdminRolesController : FaazApiController
         if (!IsInternal()) return StatusCode(403, ApiResponse.Fail(403, "Forbidden."));
 
         var roles = await _roleManager.Roles
-            .Where(r => r.RoleType == UserRole.Admin)
+            .Where(r => r.RoleType == UserRole.SuperAdmin)
             .OrderByDescending(r => r.IsSystemRole).ThenBy(r => r.Name)
             .ToListAsync();
 
@@ -85,7 +85,7 @@ public class InternalAdminRolesController : FaazApiController
 
         var role = new ApplicationRole(req.Name)
         {
-            RoleType     = UserRole.Admin,
+            RoleType     = UserRole.SuperAdmin,
             IsSystemRole = false,
             Description  = req.Description
         };
@@ -143,10 +143,10 @@ public class InternalAdminRolesController : FaazApiController
 
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null) return NotFound(ApiResponse.Fail(404, "User not found."));
-        if (user.Role != UserRole.Admin) return BadRequest(ApiResponse.Fail(400, "Only staff (Admin) accounts can be assigned an admin role."));
+        if (user.Role != UserRole.SuperAdmin) return BadRequest(ApiResponse.Fail(400, "Only staff (SuperAdmin) accounts can be assigned an admin role."));
 
         var newRole = await _roleManager.FindByIdAsync(req.RoleId.ToString());
-        if (newRole is null || newRole.RoleType != UserRole.Admin)
+        if (newRole is null || newRole.RoleType != UserRole.SuperAdmin)
             return NotFound(ApiResponse.Fail(404, "Role not found."));
 
         // Single-role-at-a-time for staff — swapping roles replaces access rather than adding to it,

@@ -25,9 +25,6 @@ public class Payment : BaseSoftDeleteModel
     public decimal        DiscountAmount        { get; set; } = 0m;
     public string?        FailureMessage        { get; set; }
     public string?        Metadata              { get; set; }
-    public string?        Remarks               { get; set; }
-    public string?        ExtraField1           { get; set; }
-    public string?        ExtraField2           { get; set; }
 
     public ICollection<Refund> Refunds { get; set; } = [];
 }

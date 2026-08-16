@@ -12,7 +12,4 @@ public class Subject : BaseSoftDeleteModel
     public string  Name        { get; set; } = string.Empty;
     public string? Category    { get; set; }
     public bool    IsActive    { get; set; } = true;
-    public string? Remarks     { get; set; }
-    public string? ExtraField1 { get; set; }
-    public string? ExtraField2 { get; set; }
 }

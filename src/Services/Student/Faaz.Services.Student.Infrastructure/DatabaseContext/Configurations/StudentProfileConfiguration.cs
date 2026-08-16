@@ -11,19 +11,10 @@ internal sealed class StudentProfileConfiguration : IEntityTypeConfiguration<Stu
         builder.ToTable("StudentProfiles");
         builder.HasKey(p => p.Id);
 
-        builder.Property(p => p.Email).HasMaxLength(256).IsRequired();
-        builder.Property(p => p.FirstName).HasMaxLength(100).IsRequired();
-        builder.Property(p => p.LastName).HasMaxLength(100).IsRequired();
-        builder.Property(p => p.CountryOfCitizenship).HasMaxLength(100);
-        builder.Property(p => p.CountryOfResidence).HasMaxLength(100);
-        builder.Property(p => p.Ethnicity).HasMaxLength(100);
-        builder.Property(p => p.FirstLanguage).HasMaxLength(100);
-        builder.Property(p => p.ProfilePhotoUrl).HasMaxLength(500);
-        builder.Property(p => p.Bio).HasMaxLength(500);
+        builder.Property(p => p.Email).IsRequired();
+        builder.Property(p => p.FirstName).IsRequired();
+        builder.Property(p => p.LastName).IsRequired();
         builder.Property(p => p.HelpTypes).HasConversion<int>();
-        builder.Property(p => p.Remarks).HasMaxLength(500);
-        builder.Property(p => p.ExtraField1).HasMaxLength(500);
-        builder.Property(p => p.ExtraField2).HasMaxLength(500);
 
         builder.Property(p => p.AdditionalLanguages).HasColumnType("nvarchar(max)");
         builder.Property(p => p.TargetSubjects).HasColumnType("nvarchar(max)");

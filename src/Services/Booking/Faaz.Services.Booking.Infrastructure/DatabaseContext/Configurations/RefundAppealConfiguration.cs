@@ -9,12 +9,8 @@ public class RefundAppealConfiguration : IEntityTypeConfiguration<RefundAppeal>
     public void Configure(EntityTypeBuilder<RefundAppeal> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Reason).HasMaxLength(1000).IsRequired();
+        builder.Property(x => x.Reason).IsRequired();
         builder.Property(x => x.RequestedAmountGbp).HasColumnType("decimal(10,2)");
-        builder.Property(x => x.AdminNotes).HasMaxLength(1000);
-        builder.Property(x => x.Remarks).HasMaxLength(500);
-        builder.Property(x => x.ExtraField1).HasMaxLength(500);
-        builder.Property(x => x.ExtraField2).HasMaxLength(500);
 
         // No HasQueryFilter — appeals are audit records, never soft-deleted
         builder.HasIndex(x => x.BookingId).IsUnique(); // one appeal per booking

@@ -11,18 +11,12 @@ namespace Faaz.Services.Booking.Infrastructure.DatabaseContext.Configurations
         public void Configure(EntityTypeBuilder<Booking> builder)
         {
             builder.HasKey(x => x.Id);
-            builder.Property(x => x.SessionTypeName).HasMaxLength(100).IsRequired();
+            builder.Property(x => x.SessionTypeName).IsRequired();
             builder.Property(x => x.SessionPriceGbp).HasColumnType("decimal(10,2)");
             builder.Property(x => x.PlatformCommissionGbp).HasColumnType("decimal(10,2)");
             builder.Property(x => x.PromoDiscountGbp).HasColumnType("decimal(10,2)");
             builder.Property(x => x.TotalChargedGbp).HasColumnType("decimal(10,2)");
-            builder.Property(x => x.StudentTimezone).HasMaxLength(100).IsRequired();
-            builder.Property(x => x.SessionBrief).HasMaxLength(500);
-            builder.Property(x => x.StripePaymentIntentId).HasMaxLength(100);
-            builder.Property(x => x.CancellationNotes).HasMaxLength(500);
-            builder.Property(x => x.Remarks).HasMaxLength(500);
-            builder.Property(x => x.ExtraField1).HasMaxLength(500);
-            builder.Property(x => x.ExtraField2).HasMaxLength(500);
+            builder.Property(x => x.StudentTimezone).IsRequired();
 
             builder.HasQueryFilter(x => !x.IsDeleted);
 

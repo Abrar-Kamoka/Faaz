@@ -9,10 +9,6 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
     public void Configure(EntityTypeBuilder<Review> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.ReviewText).HasMaxLength(2000);
-        builder.Property(x => x.Remarks).HasMaxLength(500);
-        builder.Property(x => x.ExtraField1).HasMaxLength(500);
-        builder.Property(x => x.ExtraField2).HasMaxLength(500);
 
         builder.HasOne(x => x.Session)
                .WithMany()

@@ -20,7 +20,4 @@ public class Payout : BaseSoftDeleteModel
     public DateTime?     ScheduledReleaseAt        { get; set; }
     public DateTime?     ReleasedAt                { get; set; }
     public string?       FailureReason             { get; set; }
-    public string?       Remarks                   { get; set; }
-    public string?       ExtraField1               { get; set; }
-    public string?       ExtraField2               { get; set; }
 }

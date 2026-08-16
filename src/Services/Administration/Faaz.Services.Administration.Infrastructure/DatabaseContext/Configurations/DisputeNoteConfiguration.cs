@@ -8,7 +8,7 @@ internal sealed class DisputeNoteConfiguration : IEntityTypeConfiguration<Disput
 {
     public void Configure(EntityTypeBuilder<DisputeNote> builder)
     {
-        builder.ToTable("DisputeNotes", "admin");
+        builder.ToTable("DisputeNotes");
 
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
@@ -18,7 +18,7 @@ internal sealed class DisputeNoteConfiguration : IEntityTypeConfiguration<Disput
 
         builder.Property(x => x.BookingId).IsRequired();
         builder.Property(x => x.AuthorAdminId).IsRequired();
-        builder.Property(x => x.Content).HasMaxLength(2000).IsRequired();
+        builder.Property(x => x.Content).IsRequired();
         builder.Property(x => x.CreatedAt).IsRequired();
 
         builder.HasIndex(x => x.BookingId);

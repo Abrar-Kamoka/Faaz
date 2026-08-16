@@ -56,12 +56,12 @@ public class InternalAdminUsersController : FaazApiController
             .Take(pageSize)
             .ToListAsync();
 
-        // Only Admin-tier accounts have a meaningful RBAC role assignment — skip the extra
+        // Only SuperAdmin-tier accounts have a meaningful RBAC role assignment — skip the extra
         // UserManager round trip for Student/Consultant rows.
         var items = new List<object>();
         foreach (var u in users)
         {
-            var roleNames = u.Role == UserRole.Admin ? await _userManager.GetRolesAsync(u) : [];
+            var roleNames = u.Role == UserRole.SuperAdmin ? await _userManager.GetRolesAsync(u) : [];
             items.Add(new
             {
                 u.Id,
@@ -147,8 +147,8 @@ public class InternalAdminUsersController : FaazApiController
 
         var staffRole = req.RoleName.ToLower() switch
         {
-            "admin" => UserRole.Admin,
-            _ => UserRole.Admin
+            "superadmin" => UserRole.SuperAdmin,
+            _ => UserRole.SuperAdmin
         };
 
         var maxSrNo = await _userManager.Users.MaxAsync(u => (int?)u.SrNo);
@@ -170,10 +170,10 @@ public class InternalAdminUsersController : FaazApiController
         if (!result.Succeeded)
             return BadRequest(ApiResponse.Fail(400, string.Join(", ", result.Errors.Select(e => e.Description))));
 
-        // Defaults new staff to the built-in Admin role (full access) — matches today's "any admin
+        // Defaults new staff to the built-in SuperAdmin role (full access) — matches today's "any admin
         // can do anything" behaviour. An admin can later move them to a narrower custom role from
         // Roles Management without this ever needing to change.
-        await _userManager.AddToRoleAsync(user, nameof(UserRole.Admin));
+        await _userManager.AddToRoleAsync(user, nameof(UserRole.SuperAdmin));
 
         return StatusCode(201, ApiResponse.Created(new
         {

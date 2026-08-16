@@ -37,7 +37,7 @@ public static class AdminSeeder
             NormalizedUserName = email.ToUpperInvariant(),
             FirstName          = "Platform",
             LastName           = "Admin",
-            Role               = UserRole.Admin,
+            Role               = UserRole.SuperAdmin,
             Status             = UserStatus.Active,
             IsEmailVerified    = true,
             EmailConfirmed     = true,
@@ -54,7 +54,7 @@ public static class AdminSeeder
             return;
         }
 
-        var roleResult = await userManager.AddToRoleAsync(admin, nameof(UserRole.Admin));
+        var roleResult = await userManager.AddToRoleAsync(admin, nameof(UserRole.SuperAdmin));
         if (!roleResult.Succeeded)
         {
             var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));

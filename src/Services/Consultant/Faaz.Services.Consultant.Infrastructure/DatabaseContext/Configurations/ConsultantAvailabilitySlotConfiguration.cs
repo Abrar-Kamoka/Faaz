@@ -12,10 +12,6 @@ internal sealed class ConsultantAvailabilitySlotConfiguration : IEntityTypeConfi
         builder.HasKey(s => s.Id);
 
         builder.Property(s => s.DayOfWeek).HasConversion<int?>();
-        builder.Property(s => s.Reason).HasMaxLength(200);
-        builder.Property(s => s.Remarks).HasMaxLength(500);
-        builder.Property(s => s.ExtraField1).HasMaxLength(500);
-        builder.Property(s => s.ExtraField2).HasMaxLength(500);
 
         builder.HasIndex(s => s.ConsultantProfileId).HasDatabaseName("IX_ConsultantAvailabilitySlots_ConsultantProfileId");
     }

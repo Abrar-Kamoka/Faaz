@@ -40,9 +40,7 @@ public class Booking : BaseSoftDeleteModel
     public string?   DisputeResolutionNote   { get; set; }
     public DateTime? DisputeResolvedAt       { get; set; }
     public Guid?     PromoCodeId             { get; set; }
-    public string?   Remarks                 { get; set; }
-    public string?   ExtraField1             { get; set; }
-    public string?   ExtraField2             { get; set; }
+    public string?   SessionNotes            { get; set; }
 
     public ICollection<BookingStatusHistory> StatusHistory { get; set; } = [];
     public Session?      Session      { get; set; }

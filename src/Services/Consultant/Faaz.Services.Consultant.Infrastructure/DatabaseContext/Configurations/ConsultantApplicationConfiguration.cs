@@ -11,23 +11,16 @@ internal sealed class ConsultantApplicationConfiguration : IEntityTypeConfigurat
         builder.ToTable("ConsultantApplications");
         builder.HasKey(a => a.Id);
 
+        // Email and SetupInviteToken stay bounded — both carry a unique/lookup index below, and
+        // SQL Server does not allow nvarchar(max) as an index key column.
         builder.Property(a => a.Email).HasMaxLength(254).IsRequired();
-        builder.Property(a => a.FirstName).HasMaxLength(100).IsRequired();
-        builder.Property(a => a.LastName).HasMaxLength(100).IsRequired();
-        builder.Property(a => a.PhoneNumber).HasMaxLength(30).IsRequired();
-        builder.Property(a => a.CurrentRole).HasMaxLength(200).IsRequired();
-        builder.Property(a => a.Institution).HasMaxLength(200);
-        builder.Property(a => a.ExpertiseArea).HasMaxLength(1000).IsRequired();
-        builder.Property(a => a.Nationality).HasMaxLength(100);
-        builder.Property(a => a.CountryOfResidence).HasMaxLength(100);
-        builder.Property(a => a.LinkedInProfileUrl).HasMaxLength(500);
-        builder.Property(a => a.PrimaryLanguage).HasMaxLength(100);
-        builder.Property(a => a.PersonalStatement).HasMaxLength(2000);
-        builder.Property(a => a.ReferralSource).HasMaxLength(100);
-        builder.Property(a => a.AdminNotes).HasMaxLength(2000);
+        builder.Property(a => a.FirstName).IsRequired();
+        builder.Property(a => a.LastName).IsRequired();
+        builder.Property(a => a.PhoneNumber).IsRequired();
+        builder.Property(a => a.CurrentRole).IsRequired();
+        builder.Property(a => a.ExpertiseArea).IsRequired();
         builder.Property(a => a.SetupInviteToken).HasMaxLength(88);
         builder.Property(a => a.SubmittedAt).IsRequired();
-        builder.Property(a => a.Remarks).HasMaxLength(500);
 
         builder.HasIndex(a => a.Email).IsUnique().HasDatabaseName("IX_ConsultantApplications_Email");
         builder.HasIndex(a => a.ApplicationStatus).HasDatabaseName("IX_ConsultantApplications_ApplicationStatus");

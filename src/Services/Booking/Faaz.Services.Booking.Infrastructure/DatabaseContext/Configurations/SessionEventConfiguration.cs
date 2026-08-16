@@ -9,13 +9,10 @@ public class SessionEventConfiguration : IEntityTypeConfiguration<SessionEvent>
     public void Configure(EntityTypeBuilder<SessionEvent> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.LiveKitRoomSid).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.LiveKitRoomSid).IsRequired();
+        // LiveKitEventId stays bounded — it carries a unique index below, and SQL Server does not
+        // allow nvarchar(max) as an index key column.
         builder.Property(x => x.LiveKitEventId).HasMaxLength(100).IsRequired();
-        builder.Property(x => x.ParticipantIdentity).HasMaxLength(100);
-        builder.Property(x => x.RawWebhookPayload).HasMaxLength(8000);
-        builder.Property(x => x.Remarks).HasMaxLength(500);
-        builder.Property(x => x.ExtraField1).HasMaxLength(500);
-        builder.Property(x => x.ExtraField2).HasMaxLength(500);
 
         // No HasQueryFilter — append-only evidence table
         builder.HasIndex(x => x.SessionId);

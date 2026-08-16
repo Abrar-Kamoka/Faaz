@@ -19,9 +19,6 @@ public class SessionEvent : BaseEntity
     public ParticipantRole? Role                { get; set; }
     public DateTime         OccurredAtUtc       { get; set; }
     public string?          RawWebhookPayload   { get; set; }
-    public string?          Remarks             { get; set; }
-    public string?          ExtraField1         { get; set; }
-    public string?          ExtraField2         { get; set; }
 
     public Session Session { get; set; } = null!;
 }

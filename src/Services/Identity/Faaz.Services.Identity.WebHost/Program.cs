@@ -66,6 +66,8 @@ try
         using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         db.Database.Migrate();
+        var roleLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("RoleSeeder");
+        await RoleSeeder.SeedAsync(scope.ServiceProvider, roleLogger);
         var seederLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("AdminSeeder");
         await AdminSeeder.SeedAsync(scope.ServiceProvider, seederLogger);
         var rbacLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("RbacSeeder");

@@ -8,7 +8,7 @@ internal sealed class AdminActionLogConfiguration : IEntityTypeConfiguration<Adm
 {
     public void Configure(EntityTypeBuilder<AdminActionLog> builder)
     {
-        builder.ToTable("AdminActionLogs", "admin");
+        builder.ToTable("AdminActionLogs");
 
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
@@ -16,13 +16,13 @@ internal sealed class AdminActionLogConfiguration : IEntityTypeConfiguration<Adm
 
         builder.Property(x => x.AdminUserId).IsRequired();
         builder.Property(x => x.Action).IsRequired();
+        // EntityType stays bounded — it's part of a composite index below, and SQL Server does not
+        // allow nvarchar(max) as an index key column.
         builder.Property(x => x.EntityType).HasMaxLength(100).IsRequired();
         builder.Property(x => x.EntityId).IsRequired();
-        builder.Property(x => x.Notes).HasMaxLength(2000);
         builder.Property(x => x.BeforeJson).HasColumnType("nvarchar(max)");
         builder.Property(x => x.AfterJson).HasColumnType("nvarchar(max)");
         builder.Property(x => x.PerformedAt).IsRequired();
-        builder.Property(x => x.IpAddress).HasMaxLength(45);
 
         builder.HasIndex(x => x.AdminUserId);
         builder.HasIndex(x => new { x.EntityType, x.EntityId });

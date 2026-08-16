@@ -16,9 +16,6 @@ public class ConsultantSessionType : BaseSoftDeleteModel
     public string? Description { get; set; }
     public bool IsActive { get; set; } = true;
     public int SortOrder { get; set; } = 0;
-    public string? Remarks { get; set; }
-    public string? ExtraField1 { get; set; }
-    public string? ExtraField2 { get; set; }
 
     public ConsultantProfile Profile { get; set; } = null!;
 }

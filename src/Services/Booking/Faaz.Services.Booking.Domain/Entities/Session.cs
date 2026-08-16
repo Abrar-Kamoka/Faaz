@@ -22,9 +22,6 @@ public class Session : BaseSoftDeleteModel
     public string?       CreateRoomJobId       { get; set; }
     public string?       NoShowJobId           { get; set; }
     public string?       ForceCloseJobId       { get; set; }
-    public string?       Remarks               { get; set; }
-    public string?       ExtraField1           { get; set; }
-    public string?       ExtraField2           { get; set; }
 
     public Booking                        Booking      { get; set; } = null!;
     public ICollection<SessionParticipant> Participants { get; set; } = [];

@@ -8,7 +8,7 @@ internal sealed class PlatformConfigConfiguration : IEntityTypeConfiguration<Pla
 {
     public void Configure(EntityTypeBuilder<PlatformConfig> builder)
     {
-        builder.ToTable("PlatformConfigs", "admin");
+        builder.ToTable("PlatformConfigs");
 
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
@@ -16,9 +16,10 @@ internal sealed class PlatformConfigConfiguration : IEntityTypeConfiguration<Pla
 
         builder.HasQueryFilter(x => !x.IsDeleted);
 
+        // Key stays bounded — it carries a unique index below, and SQL Server does not allow
+        // nvarchar(max) as an index key column.
         builder.Property(x => x.Key).HasMaxLength(100).IsRequired();
-        builder.Property(x => x.Value).HasMaxLength(500).IsRequired();
-        builder.Property(x => x.Description).HasMaxLength(500);
+        builder.Property(x => x.Value).IsRequired();
         builder.Property(x => x.LastUpdatedAt).IsRequired();
         builder.Property(x => x.LastUpdatedByAdminId).IsRequired();
 

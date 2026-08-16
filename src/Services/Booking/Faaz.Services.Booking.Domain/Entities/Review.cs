@@ -18,9 +18,6 @@ public class Review : BaseSoftDeleteModel
     public string?      ReviewText          { get; set; }
     public bool         IsPublic            { get; set; } = true;
     public new DateTime CreatedAt           { get; set; } = DateTime.UtcNow;
-    public string?      Remarks             { get; set; }
-    public string?      ExtraField1         { get; set; }
-    public string?      ExtraField2         { get; set; }
 
     public Booking Booking { get; set; } = null!;
     public Session Session { get; set; } = null!;

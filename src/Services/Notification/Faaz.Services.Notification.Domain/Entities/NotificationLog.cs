@@ -20,8 +20,5 @@ public class NotificationLog : BaseSoftDeleteModel
     public DateTime?          SentAt    { get; set; }
     public DateTime?          ReadAt    { get; set; }
     public string?            Payload   { get; set; }
-    public string?            Remarks   { get; set; }
-    public string?            ExtraField1 { get; set; }
-    public string?            ExtraField2 { get; set; }
 }
 

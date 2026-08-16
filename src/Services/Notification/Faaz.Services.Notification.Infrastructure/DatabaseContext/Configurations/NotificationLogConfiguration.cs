@@ -9,13 +9,9 @@ internal sealed class NotificationLogConfiguration : IEntityTypeConfiguration<No
     public void Configure(EntityTypeBuilder<NotificationLog> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Type).HasMaxLength(100).IsRequired();
-        builder.Property(x => x.Subject).HasMaxLength(255).IsRequired();
-        builder.Property(x => x.Body).HasMaxLength(4000).IsRequired();
-        builder.Property(x => x.Payload).HasMaxLength(4000);
-        builder.Property(x => x.Remarks).HasMaxLength(500);
-        builder.Property(x => x.ExtraField1).HasMaxLength(500);
-        builder.Property(x => x.ExtraField2).HasMaxLength(500);
+        builder.Property(x => x.Type).IsRequired();
+        builder.Property(x => x.Subject).IsRequired();
+        builder.Property(x => x.Body).IsRequired();
         builder.HasIndex(x => new { x.UserId, x.IsRead });
         builder.HasIndex(x => x.UserId);
     }

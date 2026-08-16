@@ -11,19 +11,11 @@ internal sealed class ConsultantProfileConfiguration : IEntityTypeConfiguration<
         builder.ToTable("ConsultantProfiles");
         builder.HasKey(p => p.Id);
 
-        builder.Property(p => p.FullLegalName).HasMaxLength(200).IsRequired();
-        builder.Property(p => p.DisplayName).HasMaxLength(100).IsRequired();
-        builder.Property(p => p.ProfessionalPhotoUrl).HasMaxLength(500);
-        builder.Property(p => p.CurrentRole).HasMaxLength(200).IsRequired();
-        builder.Property(p => p.Institution).HasMaxLength(200).IsRequired();
-        builder.Property(p => p.LinkedInUrl).HasMaxLength(500);
-        builder.Property(p => p.WrittenBio).HasMaxLength(2000);
-        builder.Property(p => p.IntroVideoUrl).HasMaxLength(500);
-        builder.Property(p => p.StripeAccountId).HasMaxLength(100);
+        builder.Property(p => p.FullLegalName).IsRequired();
+        builder.Property(p => p.DisplayName).IsRequired();
+        builder.Property(p => p.CurrentRole).IsRequired();
+        builder.Property(p => p.Institution).IsRequired();
         builder.Property(p => p.CallPreference).HasConversion<int>();
-        builder.Property(p => p.Remarks).HasMaxLength(500);
-        builder.Property(p => p.ExtraField1).HasMaxLength(500);
-        builder.Property(p => p.ExtraField2).HasMaxLength(500);
 
         builder.Property(p => p.StudyLevelsOffered).HasColumnType("nvarchar(max)");
         builder.Property(p => p.SubjectAreas).HasColumnType("nvarchar(max)");

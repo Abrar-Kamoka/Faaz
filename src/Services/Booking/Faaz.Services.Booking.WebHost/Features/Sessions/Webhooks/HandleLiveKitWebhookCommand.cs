@@ -146,7 +146,7 @@ namespace Faaz.Services.Booking.WebHost.Features.Sessions.Webhooks
                         participant.FirstJoinedUtc = occurredAt;
 
                     // Track the start of this connection window so participant_left can accumulate duration
-                    participant.ExtraField1 = occurredAt.ToString("O");
+                    participant.LastJoinWindowStartUtc = occurredAt;
 
                     if (!string.IsNullOrWhiteSpace(participant.PendingReconnectionJobId))
                     {
@@ -199,14 +199,13 @@ namespace Faaz.Services.Booking.WebHost.Features.Sessions.Webhooks
                 if (participant is not null)
                 {
                     // Accumulate the time spent in this connection window
-                    if (!string.IsNullOrWhiteSpace(participant.ExtraField1)
-                        && DateTime.TryParse(participant.ExtraField1, null, System.Globalization.DateTimeStyles.RoundtripKind, out var lastJoinedAt))
+                    if (participant.LastJoinWindowStartUtc.HasValue)
                     {
-                        var secondsThisWindow = (int)(occurredAt - lastJoinedAt).TotalSeconds;
+                        var secondsThisWindow = (int)(occurredAt - participant.LastJoinWindowStartUtc.Value).TotalSeconds;
                         if (secondsThisWindow > 0)
                             participant.TotalSecondsInRoom += secondsThisWindow;
                     }
-                    participant.ExtraField1 = null; // connection window closed
+                    participant.LastJoinWindowStartUtc = null; // connection window closed
 
                     participant.LastLeftUtc = occurredAt;
                     participant.DisconnectionCount++;
@@ -248,16 +247,13 @@ namespace Faaz.Services.Booking.WebHost.Features.Sessions.Webhooks
             var participants = await _participantServices.GetBySessionIdAsync(session.Id, ct);
 
             // Flush any open connection windows for participants still in the room when it closed
-            // (participant_left was never fired for them, so their last window is still open in ExtraField1)
-            foreach (var p in participants.Where(p => !string.IsNullOrWhiteSpace(p.ExtraField1)))
+            // (participant_left was never fired for them, so their last window is still open)
+            foreach (var p in participants.Where(p => p.LastJoinWindowStartUtc.HasValue))
             {
-                if (DateTime.TryParse(p.ExtraField1, null, System.Globalization.DateTimeStyles.RoundtripKind, out var lastJoinedAt))
-                {
-                    var secondsRemaining = (int)(occurredAt - lastJoinedAt).TotalSeconds;
-                    if (secondsRemaining > 0)
-                        p.TotalSecondsInRoom += secondsRemaining;
-                }
-                p.ExtraField1 = null;
+                var secondsRemaining = (int)(occurredAt - p.LastJoinWindowStartUtc!.Value).TotalSeconds;
+                if (secondsRemaining > 0)
+                    p.TotalSecondsInRoom += secondsRemaining;
+                p.LastJoinWindowStartUtc = null;
             }
 
             var studentSeconds    = participants.Where(p => p.Role == ParticipantRole.Student).Sum(p => p.TotalSecondsInRoom);

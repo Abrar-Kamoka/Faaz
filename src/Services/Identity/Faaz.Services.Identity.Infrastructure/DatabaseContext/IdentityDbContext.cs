@@ -1,10 +1,9 @@
+using Faaz.BuildingBlocks.Persistence;
 using Faaz.Services.Identity.Domain.Entities;
 using Faaz.SharedKernel.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using static Faaz.Services.Identity.Domain.IdentityEnums;
-using static Faaz.SharedKernel.SharedEnums;
 
 namespace Faaz.Services.Identity.Infrastructure.DatabaseContext;
 
@@ -28,6 +27,8 @@ public sealed class IdentityDbContext : IdentityDbContext<
     {
         base.OnModelCreating(builder);
 
+        builder.HasDefaultSchema("identity");
+
         builder.Entity<ApplicationUser>().ToTable("Users");
         builder.Entity<ApplicationRole>().ToTable("Roles");
         builder.Entity<ApplicationUserRole>().ToTable("UserRoles");
@@ -50,42 +51,31 @@ public sealed class IdentityDbContext : IdentityDbContext<
         // ApplicationUser has its own SrNo (not inherited from BaseEntity) — configure separately.
         builder.Entity<ApplicationUser>().Property(u => u.SrNo).ValueGeneratedNever();
 
-        SeedAdminRole(builder);
-    }
+        // System roles (SuperAdmin/Student/Consultant) are seeded at runtime by RoleSeeder, not here —
+        // HasData only inserts once, at first migration-apply, and never recovers from a data wipe.
+        builder.Entity<ApplicationUser>().ApplyStandardColumnOrder(
+            nameof(ApplicationUser.UserName), nameof(ApplicationUser.FirstName), nameof(ApplicationUser.LastName),
+            nameof(ApplicationUser.Email), nameof(ApplicationUser.EmailConfirmed), nameof(ApplicationUser.IsEmailVerified),
+            nameof(ApplicationUser.EmailVerificationToken), nameof(ApplicationUser.EmailVerificationTokenExpiry),
+            nameof(ApplicationUser.PhoneNumber), nameof(ApplicationUser.PhoneNumberConfirmed), nameof(ApplicationUser.PasswordHash),
+            nameof(ApplicationUser.LastLoginAt), nameof(ApplicationUser.Role), nameof(ApplicationUser.Status),
+            nameof(ApplicationUser.ConsultantApplicationStatus), nameof(ApplicationUser.TwoFactorEnabled),
+            nameof(ApplicationUser.LockoutEnabled), nameof(ApplicationUser.LockoutEnd), nameof(ApplicationUser.AccessFailedCount),
+            nameof(ApplicationUser.EmailNotificationsEnabled), nameof(ApplicationUser.InAppNotificationsEnabled),
+            nameof(ApplicationUser.Remarks), nameof(ApplicationUser.NormalizedUserName), nameof(ApplicationUser.NormalizedEmail),
+            nameof(ApplicationUser.SecurityStamp), nameof(ApplicationUser.ConcurrencyStamp));
 
-    private static void SeedAdminRole(ModelBuilder builder)
-    {
-        var adminRoleId = Guid.Parse("b0044d0a-1f88-4957-953c-8b188a72aa02");
-        builder.Entity<ApplicationRole>().HasData(new ApplicationRole
-        {
-            Id = adminRoleId,
-            Name = nameof(UserRole.Admin),
-            NormalizedName = nameof(UserRole.Admin).ToUpperInvariant(),
-            ConcurrencyStamp = "static-seed-v1",
-            RoleType = UserRole.Admin,
-            IsSystemRole = true
-        });
+        builder.Entity<RefreshToken>().ApplyStandardColumnOrder(
+            nameof(RefreshToken.CreatedByIp), nameof(RefreshToken.Token), nameof(RefreshToken.UserId),
+            nameof(RefreshToken.ExpiresAt), nameof(RefreshToken.JwtId), nameof(RefreshToken.RememberMe),
+            nameof(RefreshToken.IsUsed), nameof(RefreshToken.IsRevoked), nameof(RefreshToken.RevokedByIp),
+            nameof(RefreshToken.ReplacedByToken));
 
-        // Student/Consultant aren't ASP.NET Identity role assignments (that authorization still runs
-        // entirely off ApplicationUser.Role), but they're seeded here too so Roles Management has a
-        // complete, read-only picture of every role in the system, not just the admin-tier ones.
-        builder.Entity<ApplicationRole>().HasData(new ApplicationRole
-        {
-            Id = Guid.Parse("c1155e1b-2f99-4a68-a64d-9c299b83bb03"),
-            Name = nameof(UserRole.Student),
-            NormalizedName = nameof(UserRole.Student).ToUpperInvariant(),
-            ConcurrencyStamp = "static-seed-v1",
-            RoleType = UserRole.Student,
-            IsSystemRole = true
-        });
-        builder.Entity<ApplicationRole>().HasData(new ApplicationRole
-        {
-            Id = Guid.Parse("d2266f2c-3a00-4b79-b75e-ad3a0c94cc04"),
-            Name = nameof(UserRole.Consultant),
-            NormalizedName = nameof(UserRole.Consultant).ToUpperInvariant(),
-            ConcurrencyStamp = "static-seed-v1",
-            RoleType = UserRole.Consultant,
-            IsSystemRole = true
-        });
+        builder.Entity<PasswordResetToken>().ApplyStandardColumnOrder(
+            nameof(PasswordResetToken.Token), nameof(PasswordResetToken.UserId), nameof(PasswordResetToken.ExpiresAt),
+            nameof(PasswordResetToken.IsUsed));
+
+        builder.Entity<Permission>().ApplyStandardColumnOrder(
+            nameof(Permission.Key), nameof(Permission.Category), nameof(Permission.Description));
     }
 }

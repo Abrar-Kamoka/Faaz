@@ -11,12 +11,8 @@ internal sealed class ConsultantSessionTypeConfiguration : IEntityTypeConfigurat
         builder.ToTable("ConsultantSessionTypes");
         builder.HasKey(s => s.Id);
 
-        builder.Property(s => s.Name).HasMaxLength(100).IsRequired();
-        builder.Property(s => s.Description).HasMaxLength(500);
+        builder.Property(s => s.Name).IsRequired();
         builder.Property(s => s.PriceGbp).HasColumnType("decimal(10,2)");
-        builder.Property(s => s.Remarks).HasMaxLength(500);
-        builder.Property(s => s.ExtraField1).HasMaxLength(500);
-        builder.Property(s => s.ExtraField2).HasMaxLength(500);
 
         builder.HasIndex(s => s.ConsultantProfileId).HasDatabaseName("IX_ConsultantSessionTypes_ConsultantProfileId");
     }

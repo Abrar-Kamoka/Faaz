@@ -8,7 +8,7 @@ internal sealed class SubjectConfiguration : IEntityTypeConfiguration<Subject>
 {
     public void Configure(EntityTypeBuilder<Subject> builder)
     {
-        builder.ToTable("Subjects", "admin");
+        builder.ToTable("Subjects");
 
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
@@ -16,11 +16,9 @@ internal sealed class SubjectConfiguration : IEntityTypeConfiguration<Subject>
 
         builder.HasQueryFilter(x => !x.IsDeleted);
 
+        // Name stays bounded — it carries a lookup index below, and SQL Server does not allow
+        // nvarchar(max) as an index key column.
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
-        builder.Property(x => x.Category).HasMaxLength(100);
-        builder.Property(x => x.Remarks).HasMaxLength(500);
-        builder.Property(x => x.ExtraField1).HasMaxLength(500);
-        builder.Property(x => x.ExtraField2).HasMaxLength(500);
 
         builder.HasIndex(x => x.Name).HasFilter("[IsDeleted] = 0");
     }

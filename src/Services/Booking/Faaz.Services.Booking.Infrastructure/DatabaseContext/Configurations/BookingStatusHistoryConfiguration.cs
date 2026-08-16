@@ -9,10 +9,6 @@ public class BookingStatusHistoryConfiguration : IEntityTypeConfiguration<Bookin
     public void Configure(EntityTypeBuilder<BookingStatusHistory> builder)
     {
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Notes).HasMaxLength(500);
-        builder.Property(x => x.Remarks).HasMaxLength(500);
-        builder.Property(x => x.ExtraField1).HasMaxLength(500);
-        builder.Property(x => x.ExtraField2).HasMaxLength(500);
         // No HasQueryFilter — BookingStatusHistory is append-only, never soft-deleted
         builder.HasIndex(x => x.BookingId);
     }

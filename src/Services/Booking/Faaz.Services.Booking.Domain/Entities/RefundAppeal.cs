@@ -19,9 +19,6 @@ public class RefundAppeal : BaseEntity
     public Guid?              ReviewedByAdminId  { get; set; }
     public DateTime?          ReviewedAt         { get; set; }
     public string?            AdminNotes         { get; set; }
-    public string?            Remarks            { get; set; }
-    public string?            ExtraField1        { get; set; }
-    public string?            ExtraField2        { get; set; }
 
     public Booking Booking { get; set; } = null!;
 }

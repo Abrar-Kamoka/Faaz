@@ -10,10 +10,9 @@ internal sealed class PasswordResetTokenConfiguration : IEntityTypeConfiguration
     {
         builder.HasKey(t => t.Id);
 
+        // Token stays bounded — it carries a unique index below, and SQL Server does not allow
+        // nvarchar(max) as an index key column.
         builder.Property(t => t.Token).HasMaxLength(88).IsRequired();
-        builder.Property(t => t.Remarks).HasMaxLength(500);
-        builder.Property(t => t.ExtraField1).HasMaxLength(500);
-        builder.Property(t => t.ExtraField2).HasMaxLength(500);
 
         builder.HasIndex(t => t.Token).IsUnique().HasDatabaseName("IX_PasswordResetTokens_Token");
 

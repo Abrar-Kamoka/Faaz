@@ -1,3 +1,4 @@
+using Faaz.Services.Identity.Domain;
 using Faaz.Services.Identity.Domain.Entities;
 using Faaz.Services.Identity.Infrastructure.DatabaseContext;
 using Microsoft.AspNetCore.Identity;
@@ -27,8 +28,6 @@ public static class RbacSeeder
         ("reviews.moderate",           "Reviews",          "Hide, show, or delete reviews"),
     ];
 
-    private static readonly Guid AdminSystemRoleId = Guid.Parse("b0044d0a-1f88-4957-953c-8b188a72aa02");
-
     public static async Task SeedAsync(IServiceProvider services, ILogger logger)
     {
         var db          = services.GetRequiredService<IdentityDbContext>();
@@ -41,13 +40,13 @@ public static class RbacSeeder
         }
         await db.SaveChangesAsync();
 
-        // The built-in Admin role holds every permission by default — this is what preserves today's
+        // The built-in SuperAdmin role holds every permission by default — this is what preserves today's
         // "any admin can do anything" behaviour. Narrower access only happens once someone is moved
         // to a custom role created via Roles Management.
-        var adminRole = await roleManager.FindByIdAsync(AdminSystemRoleId.ToString());
+        var adminRole = await roleManager.FindByIdAsync(SystemRoleIds.SuperAdmin.ToString());
         if (adminRole is null)
         {
-            logger.LogWarning("RbacSeeder: built-in Admin role not found — skipping permission claim seed");
+            logger.LogWarning("RbacSeeder: built-in SuperAdmin role not found — skipping permission claim seed");
             return;
         }
 

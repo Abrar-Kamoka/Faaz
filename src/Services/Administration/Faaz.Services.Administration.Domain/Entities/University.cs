@@ -13,7 +13,4 @@ public class University : BaseSoftDeleteModel
     public string? Country     { get; set; }
     public string? LogoUrl     { get; set; }
     public bool    IsActive    { get; set; } = true;
-    public string? Remarks     { get; set; }
-    public string? ExtraField1 { get; set; }
-    public string? ExtraField2 { get; set; }
 }

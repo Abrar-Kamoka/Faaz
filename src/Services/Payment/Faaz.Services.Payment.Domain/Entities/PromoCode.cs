@@ -21,7 +21,4 @@ public class PromoCode : BaseSoftDeleteModel
     public bool                IsActive          { get; set; } = true;
     public string?             Description       { get; set; }
     public Guid?               ConsultantProfileId { get; set; }
-    public string?             Remarks           { get; set; }
-    public string?             ExtraField1       { get; set; }
-    public string?             ExtraField2       { get; set; }
 }

@@ -34,14 +34,5 @@ public class RefreshToken : BaseSoftDeleteModel
     [MaxLength(45)]
     public string? RevokedByIp { get; set; }
 
-    [MaxLength(500)]
-    public string? Remarks { get; set; }
-
-    [MaxLength(500)]
-    public string? ExtraField1 { get; set; }
-
-    [MaxLength(500)]
-    public string? ExtraField2 { get; set; }
-
     public ApplicationUser User { get; set; } = null!;
 }

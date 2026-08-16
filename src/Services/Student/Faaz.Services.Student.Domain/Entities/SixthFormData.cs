@@ -15,9 +15,6 @@ public class SixthFormData : BaseSoftDeleteModel
     public string? PredictedGrades { get; set; }
     public string? School { get; set; }
     public int? TargetEntryYear { get; set; }
-    public string? Remarks { get; set; }
-    public string? ExtraField1 { get; set; }
-    public string? ExtraField2 { get; set; }
 
     public StudentProfile StudentProfile { get; set; } = null!;
 }

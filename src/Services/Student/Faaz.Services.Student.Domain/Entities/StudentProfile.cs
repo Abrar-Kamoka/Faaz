@@ -29,9 +29,6 @@ public class StudentProfile : BaseSoftDeleteModel
     public string? Bio { get; set; }
     public int ProfileCompleteness { get; set; } = 0;
     public bool IsOnboardingComplete { get; set; } = false;
-    public string? Remarks { get; set; }
-    public string? ExtraField1 { get; set; }
-    public string? ExtraField2 { get; set; }
 
     public SixthFormData? SixthFormData { get; set; }
     public UndergraduateData? UndergraduateData { get; set; }

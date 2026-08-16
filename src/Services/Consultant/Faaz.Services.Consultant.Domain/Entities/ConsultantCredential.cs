@@ -15,9 +15,6 @@ public class ConsultantCredential : BaseSoftDeleteModel
     public string ContentType         { get; set; } = string.Empty;
     public long   FileSizeBytes       { get; set; }
     public DateTime UploadedAt        { get; set; } = DateTime.UtcNow;
-    public string? Remarks            { get; set; }
-    public string? ExtraField1        { get; set; }
-    public string? ExtraField2        { get; set; }
 
     public ConsultantProfile Profile { get; set; } = null!;
 }

@@ -43,7 +43,7 @@ public class SessionsController : FaazApiController
     {
         var booking = await _bookingServices.GetByIdAsync(bookingId, ct);
         if (booking is null) return NotFound(ApiResponse.Fail(404, "Booking not found."));
-        return Ok(ApiResponse.Ok(new SessionNotesDto { Notes = booking.ExtraField1 ?? "" }));
+        return Ok(ApiResponse.Ok(new SessionNotesDto { Notes = booking.SessionNotes ?? "" }));
     }
 
     [HttpPost("{bookingId:guid}/notes")]
@@ -52,7 +52,7 @@ public class SessionsController : FaazApiController
     {
         var booking = await _bookingServices.GetByIdAsync(bookingId, ct);
         if (booking is null) return NotFound(ApiResponse.Fail(404, "Booking not found."));
-        booking.ExtraField1 = dto.Notes?[..Math.Min(dto.Notes.Length, 500)] ?? "";
+        booking.SessionNotes = dto.Notes?[..Math.Min(dto.Notes.Length, 500)] ?? "";
         await _bookingServices.SaveChangesAsync(ct);
         return Ok(ApiResponse.NoContent());
     }

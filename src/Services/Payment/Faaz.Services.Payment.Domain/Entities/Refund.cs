@@ -22,9 +22,6 @@ public class Refund : BaseSoftDeleteModel
     public bool         IsAppealRefund        { get; set; } = false;
     public Guid?        AppealId              { get; set; }
     public string?      FailureReason         { get; set; }
-    public string?      Remarks               { get; set; }
-    public string?      ExtraField1           { get; set; }
-    public string?      ExtraField2           { get; set; }
 
     public Payment Payment { get; set; } = null!;
 }

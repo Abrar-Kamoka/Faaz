@@ -21,9 +21,5 @@ public class ConsultantAvailabilitySlot : BaseSoftDeleteModel
     public DateOnly? Date { get; set; }
     public string? Reason { get; set; }
 
-    public string? Remarks { get; set; }
-    public string? ExtraField1 { get; set; }
-    public string? ExtraField2 { get; set; }
-
     public ConsultantProfile Profile { get; set; } = null!;
 }

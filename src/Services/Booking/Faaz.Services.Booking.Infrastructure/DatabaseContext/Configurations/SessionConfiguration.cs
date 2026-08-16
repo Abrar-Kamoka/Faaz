@@ -9,15 +9,10 @@ public class SessionConfiguration : IEntityTypeConfiguration<Session>
     public void Configure(EntityTypeBuilder<Session> builder)
     {
         builder.HasKey(x => x.Id);
+        // LiveKitRoomName stays bounded — it carries a lookup index below, and SQL Server does not
+        // allow nvarchar(max) as an index key column.
         builder.Property(x => x.LiveKitRoomName).HasMaxLength(100).IsRequired();
-        builder.Property(x => x.LiveKitRoomSid).HasMaxLength(100);
         builder.Property(x => x.CompletionPct).HasColumnType("decimal(5,2)");
-        builder.Property(x => x.CreateRoomJobId).HasMaxLength(100);
-        builder.Property(x => x.NoShowJobId).HasMaxLength(100);
-        builder.Property(x => x.ForceCloseJobId).HasMaxLength(100);
-        builder.Property(x => x.Remarks).HasMaxLength(500);
-        builder.Property(x => x.ExtraField1).HasMaxLength(500);
-        builder.Property(x => x.ExtraField2).HasMaxLength(500);
 
         builder.HasQueryFilter(x => !x.IsDeleted);
         builder.HasIndex(x => x.BookingId).IsUnique();

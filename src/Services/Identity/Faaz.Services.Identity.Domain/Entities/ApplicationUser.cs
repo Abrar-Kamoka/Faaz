@@ -46,10 +46,4 @@ public class ApplicationUser : IdentityUser<Guid>
 
     [MaxLength(500)]
     public string? Remarks { get; set; }
-
-    [MaxLength(500)]
-    public string? ExtraField1 { get; set; }
-
-    [MaxLength(500)]
-    public string? ExtraField2 { get; set; }
 }

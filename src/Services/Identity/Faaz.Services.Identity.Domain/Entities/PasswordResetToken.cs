@@ -18,14 +18,5 @@ public class PasswordResetToken : BaseSoftDeleteModel
     public DateTime ExpiresAt { get; set; }
     public bool IsUsed { get; set; } = false;
 
-    [MaxLength(500)]
-    public string? Remarks { get; set; }
-
-    [MaxLength(500)]
-    public string? ExtraField1 { get; set; }
-
-    [MaxLength(500)]
-    public string? ExtraField2 { get; set; }
-
     public ApplicationUser User { get; set; } = null!;
 }

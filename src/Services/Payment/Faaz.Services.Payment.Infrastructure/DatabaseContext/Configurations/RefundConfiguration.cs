@@ -14,14 +14,12 @@ public class RefundConfiguration : IEntityTypeConfiguration<Refund>
         builder.HasIndex(x => x.BookingId);
         builder.HasIndex(x => x.PaymentId);
         builder.HasIndex(x => x.StripeRefundId);
+        // StripeRefundId stays bounded — it carries a lookup index below, and SQL Server does not
+        // allow nvarchar(max) as an index key column.
         builder.Property(x => x.StripeRefundId).HasMaxLength(200);
         builder.Property(x => x.Amount).HasColumnType("decimal(10,2)");
-        builder.Property(x => x.Currency).HasMaxLength(10);
         builder.Property(x => x.Status).HasConversion<int>();
-        builder.Property(x => x.Reason).IsRequired().HasMaxLength(2000);
-        builder.Property(x => x.Remarks).HasMaxLength(2000);
-        builder.Property(x => x.ExtraField1).HasMaxLength(500);
-        builder.Property(x => x.ExtraField2).HasMaxLength(500);
+        builder.Property(x => x.Reason).IsRequired();
 
         builder.HasQueryFilter(x => !x.IsDeleted);
     }

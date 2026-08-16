@@ -10,8 +10,10 @@ public class StripeWebhookEventConfiguration : IEntityTypeConfiguration<StripeWe
     {
         builder.HasKey(x => x.Id);
         builder.HasIndex(x => x.StripeEventId).IsUnique();
+        // StripeEventId stays bounded — it carries a unique index above, and SQL Server does not
+        // allow nvarchar(max) as an index key column.
         builder.Property(x => x.StripeEventId).IsRequired().HasMaxLength(200);
-        builder.Property(x => x.EventType).IsRequired().HasMaxLength(200);
+        builder.Property(x => x.EventType).IsRequired();
         builder.Property(x => x.PayloadJson).IsRequired();
         // NO HasQueryFilter — webhook events are never soft-deleted; we need the full log
     }

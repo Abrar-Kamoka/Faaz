@@ -15,15 +15,15 @@ public class SessionParticipant : BaseSoftDeleteModel
     public Guid     UserId                   { get; set; }
     public ParticipantRole Role              { get; set; }
     public DateTime? FirstJoinedUtc          { get; set; }
+    // Set when this participant joins and cleared when they leave — tracks the currently-open
+    // connection window so its duration can be added to TotalSecondsInRoom once it closes.
+    public DateTime? LastJoinWindowStartUtc  { get; set; }
     public DateTime? LastLeftUtc             { get; set; }
     public int      TotalSecondsInRoom       { get; set; } = 0;
     public int      DisconnectionCount       { get; set; } = 0;
     public bool     CompletedPreSessionCheck { get; set; } = false;
     public string?  PendingReconnectionJobId { get; set; }
     public ParticipantConnectionStatus FinalStatus { get; set; } = ParticipantConnectionStatus.NeverJoined;
-    public string?  Remarks                  { get; set; }
-    public string?  ExtraField1              { get; set; }
-    public string?  ExtraField2              { get; set; }
 
     public Session Session { get; set; } = null!;
 }
