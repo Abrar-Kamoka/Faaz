@@ -31,7 +31,10 @@ public interface IAdminIdentityClient
     Task<ActionResult> RequestRevisionApplicationAsync(Guid applicationId, string email, string notes, CancellationToken ct = default);
 }
 
-public record AdminUserDetail(Guid Id, string Email, string FirstName, string LastName, int Role, bool IsActive, DateTime CreatedAt, string? PhoneNumber, List<string>? RoleNames = null);
+// ConsultantApplicationStatus mirrors Faaz.SharedKernel.SharedEnums.ConsultantApplicationStatus
+// (Submitted=0, Invited=1, SettingUpProfile=2, PendingRevision=3, Active=4, Rejected=5, Suspended=6)
+// — only populated for consultant rows; null for students/staff, where IsActive alone is accurate.
+public record AdminUserDetail(Guid Id, string Email, string FirstName, string LastName, int Role, bool IsActive, DateTime CreatedAt, string? PhoneNumber, List<string>? RoleNames = null, int? ConsultantApplicationStatus = null);
 public record PagedUsers(List<AdminUserDetail> Items, int TotalCount);
 public record ActionResult(bool Success, string? Error);
 public record AdminPermission(Guid Id, string Key, string Category, string Description);

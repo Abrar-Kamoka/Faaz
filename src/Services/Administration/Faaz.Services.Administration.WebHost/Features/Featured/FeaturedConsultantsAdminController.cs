@@ -32,7 +32,8 @@ public class FeaturedConsultantsAdminController(
         var ok      = await consultantClient.FeatureConsultantAsync(userId, adminId, ct);
         if (!ok) return StatusCode(502, ApiResponse.Fail(502, "Failed to feature consultant."));
 
-        await LogAsync(adminId, AdminAction.FeatureConsultant, userId, $"UserId={userId}", ct);
+        // No notes needed — the audit log resolves EntityId to the consultant's own display name.
+        await LogAsync(adminId, AdminAction.FeatureConsultant, userId, null, ct);
 
         return Ok(ApiResponse.NoContent("Consultant featured."));
     }
@@ -44,12 +45,12 @@ public class FeaturedConsultantsAdminController(
         var ok      = await consultantClient.UnfeatureConsultantAsync(userId, adminId, ct);
         if (!ok) return StatusCode(502, ApiResponse.Fail(502, "Failed to unfeature consultant."));
 
-        await LogAsync(adminId, AdminAction.UnfeatureConsultant, userId, $"UserId={userId}", ct);
+        await LogAsync(adminId, AdminAction.UnfeatureConsultant, userId, null, ct);
 
         return Ok(ApiResponse.NoContent("Consultant unfeatured."));
     }
 
-    private async Task LogAsync(Guid adminId, AdminAction action, Guid entityId, string notes, CancellationToken ct)
+    private async Task LogAsync(Guid adminId, AdminAction action, Guid entityId, string? notes, CancellationToken ct)
     {
         var srNo = await auditLog.NewSerialNumberAsync(ct);
         await auditLog.AddAsync(new AdminActionLog

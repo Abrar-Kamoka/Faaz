@@ -46,6 +46,7 @@ internal sealed class GetConsultantProfileQueryHandler : IRequestHandler<GetCons
             CallPreference = profile.CallPreference.ToString(),
             MinBookingNoticeHours = profile.MinBookingNoticeHours,
             MaxAdvanceBookingDays = profile.MaxAdvanceBookingDays,
+            TimeZoneId = profile.TimeZoneId,
             IsProfileComplete = profile.IsProfileComplete,
             IsActive = profile.IsActive,
             IsVerified          = profile.IsFeatured,
@@ -67,8 +68,8 @@ internal sealed class GetConsultantProfileQueryHandler : IRequestHandler<GetCons
                 .Select(s => new WeeklySlotDto
                 {
                     DayOfWeek = (int)s.DayOfWeek!.Value,
-                    StartTime = s.StartTimeUtc!.Value,
-                    EndTime   = s.EndTimeUtc!.Value
+                    StartTime = s.StartTimeLocal!.Value,
+                    EndTime   = s.EndTimeLocal!.Value
                 }).ToList(),
             BlockedDates = profile.AvailabilitySlots
                 .Where(s => s.IsBlockedDate)

@@ -31,9 +31,15 @@ namespace Faaz.Services.Booking.WebHost.Jobs
                 var lockKey = $"slot:{booking.ConsultantProfileId}:{booking.ScheduledStartUtc:yyyyMMddHHmm}";
                 await _slotLock.ReleaseAsync(lockKey);
 
+                // CancelledTimeout is reserved for the PendingConfirmation stage — "consultant didn't
+                // respond in time" (see ExpireUnconfirmedBookingsJob). A slot hold expiring here means
+                // payment was never completed, which is exactly what CancelledPaymentFailed already
+                // exists to represent (and the frontend already has an accurate badge label for it) —
+                // reusing CancelledTimeout mislabelled this as "no response" when nothing was ever sent
+                // to the consultant to respond to.
                 var fromStatus = booking.Status;
-                booking.Status             = BookingStatus.CancelledTimeout;
-                booking.CancellationReason = CancellationReason.Timeout;
+                booking.Status             = BookingStatus.CancelledPaymentFailed;
+                booking.CancellationReason = CancellationReason.PaymentFailed;
                 booking.CancellationNotes  = "Auto-expired: payment was not completed within the 10-minute slot hold";
                 booking.RefundPercentage   = 100;
 
@@ -41,14 +47,14 @@ namespace Faaz.Services.Booking.WebHost.Jobs
                 {
                     BookingId  = booking.Id,
                     FromStatus = fromStatus,
-                    ToStatus   = BookingStatus.CancelledTimeout,
+                    ToStatus   = BookingStatus.CancelledPaymentFailed,
                     ChangedAt  = DateTime.UtcNow,
-                    Notes      = "Auto-expired: slot reservation window elapsed"
+                    Notes      = "Auto-expired: slot reservation window elapsed before payment completed"
                 });
 
                 // Releases any dangling (Authorised but never Captured) PaymentIntent on the Payment side.
                 await _publishEndpoint.Publish(new BookingCancelledEvent(
-                    booking.Id, "system-timeout", "Slot reservation expired",
+                    booking.Id, booking.ConsultantUserId, booking.StudentUserId, "system-timeout", "Slot reservation expired",
                     RefundRequired: true, RefundAmount: booking.TotalChargedGbp));
             }
 

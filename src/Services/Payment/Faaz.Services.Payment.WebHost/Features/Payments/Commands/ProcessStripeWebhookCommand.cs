@@ -25,6 +25,7 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
     {
         private readonly IPaymentServices _paymentServices;
         private readonly IRefundServices _refundServices;
+        private readonly IPayoutServices _payoutServices;
         private readonly IStripeWebhookEventServices _webhookServices;
         private readonly IPaymentGateway _gateway;
         private readonly IPaymentConsultantClient _consultantClient;
@@ -33,9 +34,9 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
         private readonly ILogger<ProcessStripeWebhookCommandHandler> _logger;
 
         public ProcessStripeWebhookCommandHandler(
-            IPaymentServices ps, IRefundServices rs, IStripeWebhookEventServices ws,
+            IPaymentServices ps, IRefundServices rs, IPayoutServices pos, IStripeWebhookEventServices ws,
             IPaymentGateway gw, IPaymentConsultantClient cc, IPublishEndpoint pub, IConfiguration config, ILogger<ProcessStripeWebhookCommandHandler> l)
-        { _paymentServices = ps; _refundServices = rs; _webhookServices = ws; _gateway = gw; _consultantClient = cc; _publishEndpoint = pub; _config = config; _logger = l; }
+        { _paymentServices = ps; _refundServices = rs; _payoutServices = pos; _webhookServices = ws; _gateway = gw; _consultantClient = cc; _publishEndpoint = pub; _config = config; _logger = l; }
 
         public async Task Handle(ProcessStripeWebhookCommand command, CancellationToken ct)
         {
@@ -44,7 +45,12 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
             StripeEvent stripeEvent;
             try
             {
-                stripeEvent = EventUtility.ConstructEvent(command.Payload, command.SignatureHeader, webhookSecret);
+                // throwOnApiVersionMismatch: false — the connected Stripe account's API version has moved
+                // ahead of what this Stripe.net package version was pinned against, and by default
+                // ConstructEvent throws on that mismatch (it looks identical to a signature failure from
+                // here). The event fields this handler actually reads (PaymentIntent/Charge/Account core
+                // properties) are stable across that version range, so skipping the strict check is safe.
+                stripeEvent = EventUtility.ConstructEvent(command.Payload, command.SignatureHeader, webhookSecret, throwOnApiVersionMismatch: false);
             }
             catch (StripeException ex)
             {
@@ -104,6 +110,12 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
                     break;
                 case "account.updated":
                     await HandleAccountUpdatedAsync((Account)stripeEvent.Data.Object, ct);
+                    break;
+                case "charge.dispute.created":
+                    await HandleDisputeCreatedAsync((Dispute)stripeEvent.Data.Object, ct);
+                    break;
+                case "charge.dispute.closed":
+                    await HandleDisputeClosedAsync((Dispute)stripeEvent.Data.Object, ct);
                     break;
                 default:
                     _logger.LogDebug("Unhandled Stripe event type: {Type}", stripeEvent.Type);
@@ -181,6 +193,71 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
         {
             await _consultantClient.UpdateStripeConnectAccountStatusAsync(
                 account.Id, account.DetailsSubmitted, account.ChargesEnabled, ct);
+        }
+
+        // A real bank/card-issuer chargeback — distinct from the app's own internal "Disputed" booking
+        // status (a support ticket a student files themselves). Per Stripe's Connect guidance, the
+        // dispute amount and fee are debited from the PLATFORM's balance regardless of where the money
+        // ended up, so if the consultant's payout for this booking hasn't gone out yet, hold it rather
+        // than let PayoutReleasedConsumer pay it out from under an active dispute.
+        //
+        // Known limitation: if the dispute lands before SessionCompletedConsumer has created the Payout
+        // row yet (i.e. the session hasn't finished), there's nothing here to hold — SessionCompletedConsumer
+        // doesn't currently check for an open dispute when creating that row. In practice a chargeback
+        // almost always arrives well after the session (cardholder reacts to their statement), so this
+        // covers the realistic case; the early-dispute edge case needs a persistent "disputed" flag on
+        // Payment to close fully, which is a schema change left for a follow-up.
+        private async Task HandleDisputeCreatedAsync(Dispute dispute, CancellationToken ct)
+        {
+            var payment = await _paymentServices.GetByStripePaymentIntentIdAsync(dispute.PaymentIntentId, ct);
+            if (payment is null) { _logger.LogWarning("HandleDisputeCreatedAsync: no payment found for intent {Id}", dispute.PaymentIntentId); return; }
+
+            _logger.LogWarning("Dispute {DisputeId} created for booking {BookingId}, reason={Reason}", dispute.Id, payment.BookingId, dispute.Reason);
+
+            var payout = await _payoutServices.GetByBookingIdAsync(payment.BookingId, ct);
+            if (payout is null) return; // nothing to hold yet — see limitation note above
+
+            if (payout.Status == PayoutStatus.Paid)
+            {
+                // Money already left the platform for the connected account. Recovering it requires an
+                // explicit Transfer Reversal (POST /v1/transfers/:id/reversals) — that can push the
+                // consultant's own Stripe balance negative, so it's deliberately not automated here.
+                // Surface it loudly for an admin to action manually via the Stripe Dashboard.
+                _logger.LogError(
+                    "Dispute {DisputeId} on booking {BookingId} — payout ALREADY PAID (transfer {TransferId}). Manual transfer reversal may be required.",
+                    dispute.Id, payment.BookingId, payout.StripeTransferId);
+                return;
+            }
+
+            payout.Status        = PayoutStatus.OnHold;
+            payout.FailureReason = $"Held: Stripe dispute {dispute.Id} opened ({dispute.Reason}).";
+            await _payoutServices.SaveChangesAsync(ct);
+        }
+
+        private async Task HandleDisputeClosedAsync(Dispute dispute, CancellationToken ct)
+        {
+            var payment = await _paymentServices.GetByStripePaymentIntentIdAsync(dispute.PaymentIntentId, ct);
+            if (payment is null) { _logger.LogWarning("HandleDisputeClosedAsync: no payment found for intent {Id}", dispute.PaymentIntentId); return; }
+
+            var payout = await _payoutServices.GetByBookingIdAsync(payment.BookingId, ct);
+            if (payout is null || payout.Status != PayoutStatus.OnHold) return;
+
+            if (dispute.Status == "won")
+            {
+                // Platform successfully contested it — release the hold so the next payout sweep pays normally.
+                payout.Status        = PayoutStatus.Pending;
+                payout.FailureReason = null;
+                _logger.LogInformation("Dispute {DisputeId} won — payout for booking {BookingId} released from hold", dispute.Id, payment.BookingId);
+            }
+            else
+            {
+                // "lost" (or any other closed-but-not-won outcome) — the platform ate the chargeback.
+                // Mark Failed (not left OnHold) so it reads as "needs a human decision", not "pending".
+                payout.Status        = PayoutStatus.Failed;
+                payout.FailureReason = $"Dispute {dispute.Id} lost — payout withheld.";
+                _logger.LogWarning("Dispute {DisputeId} lost — payout for booking {BookingId} marked Failed", dispute.Id, payment.BookingId);
+            }
+            await _payoutServices.SaveChangesAsync(ct);
         }
     }
 }

@@ -26,6 +26,9 @@ public class ConsultantApplication : BaseSoftDeleteModel
     public string? CountryOfResidence { get; set; }
     public string? LinkedInProfileUrl { get; set; }
     public HighestQualification? HighestQualification { get; set; }
+    // Only meaningful when HighestQualification == HighestQualification.Other — the applicant's own
+    // free-text description of their qualification.
+    public string? HighestQualificationOther { get; set; }
     public string? PrimaryLanguage { get; set; }
     public string? PersonalStatement { get; set; }
     public ConsultationMode? ConsultationMode { get; set; }

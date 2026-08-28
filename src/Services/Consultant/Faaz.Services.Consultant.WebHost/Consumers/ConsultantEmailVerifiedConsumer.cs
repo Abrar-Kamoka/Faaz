@@ -1,5 +1,5 @@
-using Faaz.Services.Consultant.Domain.Entities;
 using Faaz.Services.Consultant.Infrastructure.Interfaces;
+using Faaz.Services.Consultant.WebHost.Features.ConsultantProfile;
 using Faaz.SharedKernel.IntegrationEvents;
 using MassTransit;
 using Microsoft.Extensions.Logging;
@@ -50,16 +50,7 @@ public class ConsultantEmailVerifiedConsumer : IConsumer<ConsultantEmailVerified
         }
 
         // Pre-fill from the application so the consultant doesn't re-enter data they already submitted.
-        await _profileServices.AddAsync(new ConsultantProfile
-        {
-            UserId            = msg.UserId,
-            ApplicationId     = app.Id,
-            FullLegalName     = $"{app.FirstName} {app.LastName}".Trim(),
-            DisplayName       = app.FirstName,
-            CurrentRole       = app.CurrentRole,
-            LinkedInUrl       = app.LinkedInProfileUrl,
-            YearsOfExperience = app.YearsOfExperience
-        }, ct);
+        await _profileServices.AddAsync(ConsultantProfileStubBuilder.Build(msg.UserId, app), ct);
 
         await _profileServices.SaveChangesAsync(ct);
 

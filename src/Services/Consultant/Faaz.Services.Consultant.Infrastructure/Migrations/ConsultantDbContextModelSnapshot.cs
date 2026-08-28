@@ -91,6 +91,10 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasColumnOrder(1013);
 
+                    b.Property<string>("HighestQualificationOther")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnOrder(1026);
+
                     b.Property<string>("Institution")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnOrder(1010);
@@ -276,7 +280,7 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnOrder(9005);
 
-                    b.Property<TimeOnly?>("EndTimeUtc")
+                    b.Property<TimeOnly?>("EndTimeLocal")
                         .HasColumnType("time")
                         .HasColumnOrder(1004);
 
@@ -296,7 +300,7 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasColumnOrder(1);
 
-                    b.Property<TimeOnly?>("StartTimeUtc")
+                    b.Property<TimeOnly?>("StartTimeLocal")
                         .HasColumnType("time")
                         .HasColumnOrder(1003);
 
@@ -447,7 +451,7 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasColumnOrder(1019);
+                        .HasColumnOrder(1020);
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit")
@@ -457,19 +461,19 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false)
-                        .HasColumnOrder(1020);
+                        .HasColumnOrder(1021);
 
                     b.Property<bool>("IsProfileComplete")
                         .HasColumnType("bit")
-                        .HasColumnOrder(1018);
+                        .HasColumnOrder(1019);
 
                     b.Property<bool>("IsStripeChargesEnabled")
                         .HasColumnType("bit")
-                        .HasColumnOrder(1023);
+                        .HasColumnOrder(1024);
 
                     b.Property<bool>("IsStripeDetailsSubmitted")
                         .HasColumnType("bit")
-                        .HasColumnOrder(1022);
+                        .HasColumnOrder(1023);
 
                     b.Property<string>("LinkedInUrl")
                         .HasColumnType("nvarchar(max)")
@@ -503,7 +507,7 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
 
                     b.Property<string>("StripeAccountId")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnOrder(1021);
+                        .HasColumnOrder(1022);
 
                     b.PrimitiveCollection<string>("StudyLevelsOffered")
                         .IsRequired()
@@ -514,6 +518,11 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnOrder(1010);
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnOrder(1018);
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2")

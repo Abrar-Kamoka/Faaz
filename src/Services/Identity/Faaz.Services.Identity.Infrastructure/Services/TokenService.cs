@@ -21,8 +21,11 @@ internal sealed class TokenService : ITokenService
 
     public TokenService(IConfiguration config)
     {
-        var pem = config["Jwt:PrivateKeyPem"]
-            ?? throw new InvalidOperationException("Jwt:PrivateKeyPem is not configured.");
+        var pem = config["Jwt:PrivateKeyPem"];
+        if (string.IsNullOrWhiteSpace(pem))
+            throw new InvalidOperationException(
+                "Jwt:PrivateKeyPem is not configured. Set it via 'dotnet user-secrets set Jwt:PrivateKeyPem \"...\"' " +
+                "for local dev, or the JWT__PRIVATEKEYPEM environment variable in other environments — it must never be committed to appsettings.json.");
 
         var rsa = RSA.Create();
         rsa.ImportFromPem(pem.Replace("\\n", "\n"));

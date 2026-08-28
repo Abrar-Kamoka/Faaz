@@ -20,6 +20,7 @@ public class RegisterConsultantDto
     public string? CountryOfResidence { get; set; }
     public string? LinkedInProfileUrl { get; set; }
     public HighestQualification? HighestQualification { get; set; }
+    public string? HighestQualificationOther { get; set; }
     public string? PrimaryLanguage { get; set; }
     public string? PersonalStatement { get; set; }
     public ConsultationMode? ConsultationMode { get; set; }

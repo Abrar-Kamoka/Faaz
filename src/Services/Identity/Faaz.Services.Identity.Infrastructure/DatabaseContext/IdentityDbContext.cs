@@ -19,6 +19,12 @@ public sealed class IdentityDbContext : IdentityDbContext<
 {
     public IdentityDbContext(DbContextOptions<IdentityDbContext> options) : base(options) { }
 
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.ConfigureUtcDateTimeConvention();
+        base.ConfigureConventions(configurationBuilder);
+    }
+
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<Permission> Permissions => Set<Permission>();

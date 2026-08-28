@@ -20,18 +20,25 @@ internal sealed class StripePaymentGateway : IPaymentGateway
     {
         try
         {
+            // Deliberately NOT a Stripe "destination charge" (no TransferData/ApplicationFeeAmount here).
+            // Per Stripe's own docs, setting transfer_data[destination] + application_fee_amount on the
+            // PaymentIntent makes Stripe auto-transfer the consultant's share the INSTANT the charge is
+            // captured — which for us is the moment the consultant accepts, days before the session even
+            // happens. That's incompatible with the escrow this platform is built around: refunds for
+            // late cancellation, no-shows, and disputes all need the money to still be sitting in the
+            // platform's own balance up until the 48h payout sweep. So captured funds stay on the
+            // platform account, and the consultant is paid via an explicit, separate CreateTransferAsync
+            // call (see PayoutReleasedConsumer) only once the 48h escrow window has passed uneventfully.
+            // consultantConnectAccountId/platformFeeGbp are kept as parameters (unused here now) rather
+            // than changed on IPaymentGateway, since CreatePaymentIntentCommand already validates the
+            // consultant's Connect account separately before ever calling this method.
             var options = new PaymentIntentCreateOptions
             {
                 Amount        = (long)(amountGbp * 100),
                 Currency      = "gbp",
                 Customer      = stripeCustomerId,
                 CaptureMethod = "manual",
-                Metadata      = new Dictionary<string, string> { ["booking_id"] = bookingIdMeta },
-                TransferData  = new PaymentIntentTransferDataOptions
-                {
-                    Destination = consultantConnectAccountId
-                },
-                ApplicationFeeAmount = (long)(platformFeeGbp * 100)
+                Metadata      = new Dictionary<string, string> { ["booking_id"] = bookingIdMeta }
             };
             var service = new PaymentIntentService();
             var intent  = await service.CreateAsync(options, cancellationToken: ct);

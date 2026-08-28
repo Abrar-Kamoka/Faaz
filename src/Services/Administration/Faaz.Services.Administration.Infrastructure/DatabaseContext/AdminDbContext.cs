@@ -9,6 +9,12 @@ public class AdminDbContext : DbContext
 {
     public AdminDbContext(DbContextOptions<AdminDbContext> options) : base(options) { }
 
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.ConfigureUtcDateTimeConvention();
+        base.ConfigureConventions(configurationBuilder);
+    }
+
     public DbSet<AdminActionLog> AdminActionLogs { get; set; }
     public DbSet<PlatformConfig> PlatformConfigs { get; set; }
     public DbSet<DisputeNote>    DisputeNotes    { get; set; }

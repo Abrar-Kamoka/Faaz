@@ -28,6 +28,7 @@ try
         x.AddConsumer<BookingConfirmedConsumer>();
         x.AddConsumer<BookingCancelledConsumer>();
         x.AddConsumer<SessionCompletedConsumer>();
+        x.AddConsumer<SessionNoShowConsumer>();
         x.AddConsumer<RefundAppealApprovedConsumer>();
         x.AddConsumer<DisputeResolvedConsumer>();
         x.AddConsumer<PayoutReleasedConsumer>();

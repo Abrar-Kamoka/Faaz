@@ -28,6 +28,11 @@ public class ConsultantProfile : BaseSoftDeleteModel
     public CallPreference CallPreference { get; set; } = CallPreference.Both;
     public int MinBookingNoticeHours { get; set; } = 24;
     public int MaxAdvanceBookingDays { get; set; } = 60;
+    // IANA identifier (e.g. "Europe/London", "Asia/Karachi") — the timezone AvailabilitySlot's
+    // StartTimeLocal/EndTimeLocal are relative to. Defaults to "UTC" so existing profiles that
+    // haven't re-saved their availability since this field was added keep their exact prior
+    // (previously mislabeled-as-UTC) behavior rather than silently shifting.
+    public string TimeZoneId { get; set; } = "UTC";
     public bool IsProfileComplete { get; set; } = false;
     public bool IsActive { get; set; } = false;
     public bool IsFeatured { get; set; } = false;

@@ -2,6 +2,7 @@ using Faaz.BuildingBlocks.Extensions;
 using Faaz.Services.Administration.Infrastructure.DatabaseContext;
 using Faaz.Services.Administration.Infrastructure.Extensions;
 using Faaz.Services.Administration.WebHost.DevConsumers;
+using Faaz.Services.Administration.WebHost.Features.AuditLog;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -45,6 +46,7 @@ try
         });
     });
     builder.Services.AddAdministrationInfrastructure(builder.Configuration, builder.Environment);
+    builder.Services.AddScoped<IAuditLogEnricher, AuditLogEnricher>();
     builder.Services.AddFaazRabbitMq(builder.Configuration, builder.Environment, x =>
     {
         x.AddConsumer<ConsultantSuspendedDevConsumer>();

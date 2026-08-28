@@ -23,6 +23,7 @@ public class ConsultantProfileDto
     public string CallPreference { get; set; } = string.Empty;
     public int MinBookingNoticeHours { get; set; }
     public int MaxAdvanceBookingDays { get; set; }
+    public string TimeZoneId { get; set; } = "UTC";
     public bool IsProfileComplete { get; set; }
     public bool IsActive { get; set; }
     public bool IsVerified { get; set; }

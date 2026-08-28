@@ -58,11 +58,21 @@ internal sealed class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCom
                 // PendingEmailVerification here; their own approval flow moves Status separately.
                 user.Status = UserStatus.Active;
 
-            await _userManager.UpdateAsync(user);
-        }
+            // Two near-simultaneous requests for the same token (email security scanners prefetching
+            // the link, a double-fired frontend request) can both read IsEmailVerified=false before
+            // either commits — ApplicationUser's inherited ConcurrencyStamp makes the loser's
+            // UpdateAsync fail rather than silently overwrite, so only the winner publishes and the
+            // notification can't be duplicated.
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                _logger.LogInformation("Email verification for UserId {UserId} lost a concurrent update race — skipping duplicate publish", user.Id);
+                return;
+            }
 
-        if (user.Role == UserRole.Consultant)
-            await _publishEndpoint.Publish(new ConsultantEmailVerifiedEvent(user.Id), ct);
+            if (user.Role == UserRole.Consultant)
+                await _publishEndpoint.Publish(new ConsultantEmailVerifiedEvent(user.Id), ct);
+        }
 
         _logger.LogInformation("Email verified for UserId: {UserId}", user.Id);
     }

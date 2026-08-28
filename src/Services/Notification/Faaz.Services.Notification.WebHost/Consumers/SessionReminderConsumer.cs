@@ -1,5 +1,6 @@
 using Faaz.Services.Notification.Domain.Entities;
 using Faaz.Services.Notification.Infrastructure.Interfaces;
+using Faaz.Services.Notification.Infrastructure.Services;
 using Faaz.Services.Notification.WebHost.Hubs;
 using Faaz.SharedKernel.IntegrationEvents;
 using MassTransit;
@@ -14,16 +15,22 @@ public class SessionReminderConsumer : IConsumer<SessionReminderEvent>
 {
     private readonly INotificationLogServices _logServices;
     private readonly IHubContext<NotificationHub> _hub;
+    private readonly INotificationIdentityClient _identityClient;
+    private readonly IEmailSenderService _emailSender;
     private readonly ILogger<SessionReminderConsumer> _logger;
 
     public SessionReminderConsumer(
         INotificationLogServices logServices,
         IHubContext<NotificationHub> hub,
+        INotificationIdentityClient identityClient,
+        IEmailSenderService emailSender,
         ILogger<SessionReminderConsumer> logger)
     {
-        _logServices = logServices;
-        _hub         = hub;
-        _logger      = logger;
+        _logServices    = logServices;
+        _hub            = hub;
+        _identityClient = identityClient;
+        _emailSender    = emailSender;
+        _logger         = logger;
     }
 
     public async Task Consume(ConsumeContext<SessionReminderEvent> context)
@@ -52,6 +59,35 @@ public class SessionReminderConsumer : IConsumer<SessionReminderEvent>
                 SentAt  = DateTime.UtcNow,
                 Payload = JsonSerializer.Serialize(msg)
             }, ct);
+
+            var contact = await _identityClient.GetUserAsync(userId, ct);
+            if (contact is not null)
+            {
+                var emailStatus = NotificationStatus.Sent;
+                try
+                {
+                    await _emailSender.SendAsync(
+                        contact.Email, subject,
+                        $"<p>Hi {contact.FirstName},</p><p>{body}</p>", ct);
+                }
+                catch (Exception ex)
+                {
+                    emailStatus = NotificationStatus.Failed;
+                    _logger.LogError(ex, "SessionReminder email delivery failed for user {UserId}", userId);
+                }
+
+                await _logServices.AddAsync(new NotificationLog
+                {
+                    UserId  = userId,
+                    Channel = NotificationChannel.Email,
+                    Type    = nameof(SessionReminderEvent),
+                    Subject = subject,
+                    Body    = body,
+                    Status  = emailStatus,
+                    SentAt  = DateTime.UtcNow,
+                    Payload = JsonSerializer.Serialize(msg)
+                }, ct);
+            }
         }
 
         await _logServices.SaveChangesAsync(ct);

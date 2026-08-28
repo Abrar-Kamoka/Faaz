@@ -17,6 +17,11 @@ internal sealed class LiveKitVideoService : IVideoService
         _apiKey        = config["LiveKit:ApiKey"]        ?? throw new InvalidOperationException("LiveKit:ApiKey not configured");
         _apiSecret     = config["LiveKit:ApiSecret"]     ?? throw new InvalidOperationException("LiveKit:ApiSecret not configured");
         _serverUrl     = config["LiveKit:ServerUrl"]     ?? "http://localhost:7880";
+        // LiveKit signs outgoing webhooks with the secret of one of its own configured API keys —
+        // there's no separate "webhook secret" concept server-side (see config-sample.yaml upstream).
+        // Only set LiveKit:WebhookSecret explicitly if the server is deliberately configured with a
+        // second, dedicated key for webhook.api_key; otherwise this must equal ApiSecret, so default
+        // to it here rather than requiring every environment to duplicate the value.
         _webhookSecret = config["LiveKit:WebhookSecret"] ?? _apiSecret;
         _logger        = logger;
     }

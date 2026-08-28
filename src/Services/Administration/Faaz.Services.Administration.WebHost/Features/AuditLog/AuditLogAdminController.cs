@@ -7,7 +7,7 @@ namespace Faaz.Services.Administration.WebHost.Features.AuditLog;
 
 [Route("api/v1/admin/audit-log")]
 [Authorize(Policy = "AdminOnly")]
-public class AuditLogAdminController(IAdminActionLogServices auditLog) : FaazApiController
+public class AuditLogAdminController(IAdminActionLogServices auditLog, IAuditLogEnricher enricher) : FaazApiController
 {
     [HttpGet]
     public async Task<IActionResult> GetAll(
@@ -18,6 +18,7 @@ public class AuditLogAdminController(IAdminActionLogServices auditLog) : FaazApi
         CancellationToken ct = default)
     {
         var (items, total) = await auditLog.GetAllAsync(page, pageSize, adminId, entityType, ct);
-        return Ok(ApiResponse.Ok(new { Items = items, TotalCount = total, Page = page, PageSize = pageSize }));
+        var enriched = await enricher.EnrichAsync(items, ct);
+        return Ok(ApiResponse.Ok(new { Items = enriched, TotalCount = total, Page = page, PageSize = pageSize }));
     }
 }

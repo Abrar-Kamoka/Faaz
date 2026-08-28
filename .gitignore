@@ -98,3 +98,10 @@ BuildHost-netcore/
 #  Miscellaneous tool caches
 # ─────────────────────────────────────────────
 *.lscache
+
+# ─────────────────────────────────────────────
+#  Downloaded local dev binaries — re-fetched by infra/scripts/start-livekit.ps1,
+#  platform-specific, not something to version control
+# ─────────────────────────────────────────────
+infra/tools/livekit/livekit-server.exe
+infra/tools/livekit/LICENSE

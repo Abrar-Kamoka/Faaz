@@ -2,6 +2,8 @@ using Faaz.Services.Student.Domain.Entities;
 using Faaz.Services.Student.Infrastructure.Interfaces;
 using Faaz.Services.Student.WebHost.Features.StudentProfile.DTOs;
 using Faaz.SharedKernel.Exceptions;
+using Faaz.SharedKernel.IntegrationEvents;
+using MassTransit;
 using MediatR;
 using static Faaz.Services.Student.Domain.StudentEnums;
 
@@ -16,10 +18,12 @@ public class UpdateStudyLevelCommand : IRequest
 internal sealed class UpdateStudyLevelCommandHandler : IRequestHandler<UpdateStudyLevelCommand>
 {
     private readonly IStudentProfileServices _profileServices;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public UpdateStudyLevelCommandHandler(IStudentProfileServices profileServices)
+    public UpdateStudyLevelCommandHandler(IStudentProfileServices profileServices, IPublishEndpoint publishEndpoint)
     {
         _profileServices = profileServices;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task Handle(UpdateStudyLevelCommand command, CancellationToken ct)
@@ -28,6 +32,8 @@ internal sealed class UpdateStudyLevelCommandHandler : IRequestHandler<UpdateStu
         // Child entities are tracked independently via Remove/AddStudyDataAsync below.
         var profile = await _profileServices.GetByUserIdNoTrackingAsync(command.UserId, ct)
             ?? throw new NotFoundException("StudentProfile", command.UserId);
+
+        var wasComplete = profile.IsOnboardingComplete;
 
         // Remove ALL existing track-specific child data — we always re-insert fresh.
         // Using explicit Remove (tracked delete) rather than null-assignment to avoid
@@ -93,5 +99,8 @@ internal sealed class UpdateStudyLevelCommandHandler : IRequestHandler<UpdateStu
         // Step 2: update profile fields directly via ExecuteUpdate (bypasses change tracking)
         await _profileServices.ExecuteUpdateStudyTrackAsync(
             profile.Id, command.PutModel.StudyTrack, completeness, isOnboarding, ct);
+
+        if (!wasComplete && isOnboarding)
+            await _publishEndpoint.Publish(new StudentOnboardingCompletedEvent(profile.UserId, profile.FirstName), ct);
     }
 }

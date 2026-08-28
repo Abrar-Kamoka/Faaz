@@ -14,6 +14,12 @@ namespace Faaz.Services.Booking.Infrastructure.DatabaseContext
     {
         public BookingDbContext(DbContextOptions<BookingDbContext> options) : base(options) { }
 
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        {
+            configurationBuilder.ConfigureUtcDateTimeConvention();
+            base.ConfigureConventions(configurationBuilder);
+        }
+
         public DbSet<Booking>              Bookings             => Set<Booking>();
         public DbSet<BookingStatusHistory> BookingStatusHistory => Set<BookingStatusHistory>();
         public DbSet<Session>              Sessions             => Set<Session>();

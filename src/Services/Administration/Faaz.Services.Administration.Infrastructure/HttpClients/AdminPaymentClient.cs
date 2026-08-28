@@ -11,7 +11,7 @@ public interface IAdminPaymentClient
     Task<AdminTransactionDetail?> GetTransactionByIdAsync(Guid transactionId, CancellationToken ct = default);
     Task<PagedPayouts?> GetPayoutsAsync(int page, int pageSize, string? status, CancellationToken ct = default);
     Task<AdminPayoutDetail?> GetPayoutByIdAsync(Guid payoutId, CancellationToken ct = default);
-    Task<bool> RefundTransactionAsync(Guid transactionId, Guid adminId, string reason, CancellationToken ct = default);
+    Task<bool> RefundTransactionAsync(Guid transactionId, Guid adminId, string reason, decimal? amount = null, CancellationToken ct = default);
     Task<decimal> GetStudentTotalSpentAsync(Guid studentId, CancellationToken ct = default);
     Task<List<RevenueDay>?> GetRevenueTimeSeriesAsync(DateTime from, DateTime to, CancellationToken ct = default);
     Task<List<TopConsultantEarning>?> GetTopConsultantsAsync(DateTime from, DateTime to, int take, CancellationToken ct = default);
@@ -29,6 +29,8 @@ public record AdminTransactionDetail(
 
 public record PagedTransactions(List<AdminTransactionDetail> Items, int TotalCount);
 public record StudentSpendSummary(decimal TotalSpentGbp);
+// PlatformFeeGbp is GROSS commission — it does not subtract Stripe's own per-transaction processing
+// fee, so it overstates true net platform revenue. Label it accordingly wherever it's shown in the UI.
 public record RevenueDay(DateTime Date, decimal RevenueGbp, decimal PlatformFeeGbp, int PaymentCount);
 public record TopConsultantEarning(Guid ConsultantUserId, decimal TotalEarningsGbp, int BookingCount);
 
@@ -117,11 +119,11 @@ internal sealed class AdminPaymentClient : IAdminPaymentClient
     public async Task<AdminPayoutDetail?> GetPayoutByIdAsync(Guid payoutId, CancellationToken ct = default)
         => await GetAsync<AdminPayoutDetail>($"/internal/admin/payouts/{payoutId}", ct);
 
-    public async Task<bool> RefundTransactionAsync(Guid transactionId, Guid adminId, string reason, CancellationToken ct = default)
+    public async Task<bool> RefundTransactionAsync(Guid transactionId, Guid adminId, string reason, decimal? amount = null, CancellationToken ct = default)
     {
         using var req = new HttpRequestMessage(HttpMethod.Post, $"/internal/admin/transactions/{transactionId}/refund")
         {
-            Content = JsonContent.Create(new { adminId, reason })
+            Content = JsonContent.Create(new { adminId, reason, amount })
         };
         req.Headers.Add("X-Service-Key", _serviceKey);
         var resp = await _http.SendAsync(req, CancellationToken.None);

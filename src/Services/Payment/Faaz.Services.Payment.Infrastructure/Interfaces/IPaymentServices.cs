@@ -6,6 +6,10 @@ namespace Faaz.Services.Payment.Infrastructure.Interfaces
         Guid Id, Guid BookingId, string Reference, string Type,
         decimal AmountGbp, string Currency, string Status, DateTime CreatedAt);
 
+    // PlatformFeeGbp is the GROSS commission charged (Payment.PlatformFee summed) — it does not
+    // subtract Stripe's own processing fee on each transaction, so it overstates actual net platform
+    // revenue. True net revenue would need Stripe's per-charge Balance Transaction fee data, which
+    // isn't pulled in here.
     public record RevenueDay(DateTime Date, decimal RevenueGbp, decimal PlatformFeeGbp, int PaymentCount);
     public record TopConsultantEarning(Guid ConsultantUserId, decimal TotalEarningsGbp, int BookingCount);
 

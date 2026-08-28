@@ -1,4 +1,5 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup>  <UserSecretsId>983abd48-1fb9-42a4-9e9c-8d37735a8773</UserSecretsId>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Faaz.Services.Booking.Domain\Faaz.Services.Booking.Domain.csproj" />
     <ProjectReference Include="..\Faaz.Services.Booking.Infrastructure\Faaz.Services.Booking.Infrastructure.csproj" />

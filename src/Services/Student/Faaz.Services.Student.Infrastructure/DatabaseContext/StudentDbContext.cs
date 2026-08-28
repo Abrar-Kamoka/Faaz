@@ -14,6 +14,12 @@ public class StudentDbContext : DbContext
 {
     public StudentDbContext(DbContextOptions<StudentDbContext> options) : base(options) { }
 
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.ConfigureUtcDateTimeConvention();
+        base.ConfigureConventions(configurationBuilder);
+    }
+
     public DbSet<StudentProfile> StudentProfiles => Set<StudentProfile>();
     public DbSet<SixthFormData> SixthFormData => Set<SixthFormData>();
     public DbSet<UndergraduateData> UndergraduateData => Set<UndergraduateData>();

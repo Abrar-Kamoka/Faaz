@@ -90,7 +90,7 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
 
             var refundAmount = Math.Round(booking.TotalChargedGbp * (refundPercentage / 100m), 2);
             await _publishEndpoint.Publish(new BookingCancelledEvent(
-                booking.Id,
+                booking.Id, booking.ConsultantUserId, booking.StudentUserId,
                 isCancellingConsultant ? $"consultant-{command.RequestingUserId}" : $"student-{command.RequestingUserId}",
                 command.PutModel.Reason ?? "Cancelled",
                 RefundRequired: refundPercentage > 0,

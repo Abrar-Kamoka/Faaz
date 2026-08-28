@@ -1,5 +1,6 @@
 using Faaz.Services.Administration.Infrastructure.HttpClients;
 using Faaz.Services.Administration.Infrastructure.Interfaces;
+using Faaz.Services.Administration.WebHost.Features.AuditLog;
 using Faaz.SharedKernel.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +13,8 @@ public class AnalyticsAdminController(
     IAdminBookingClient bookingClient,
     IAdminPaymentClient paymentClient,
     IAdminIdentityClient identityClient,
-    IAdminActionLogServices auditLog) : FaazApiController
+    IAdminActionLogServices auditLog,
+    IAuditLogEnricher enricher) : FaazApiController
 {
     [HttpGet]
     public async Task<IActionResult> GetDashboard(
@@ -23,11 +25,12 @@ public class AnalyticsAdminController(
         var bookingAnalytics = await bookingClient.GetAnalyticsAsync(from, to, ct);
 
         var (auditLogs, auditTotal) = await auditLog.GetAllAsync(1, 10, ct: ct);
+        var enrichedAuditLogs = await enricher.EnrichAsync(auditLogs, ct);
 
         return Ok(ApiResponse.Ok(new
         {
             Bookings         = bookingAnalytics,
-            RecentAdminActions = new { Items = auditLogs, TotalCount = auditTotal }
+            RecentAdminActions = new { Items = enrichedAuditLogs, TotalCount = auditTotal }
         }));
     }
 

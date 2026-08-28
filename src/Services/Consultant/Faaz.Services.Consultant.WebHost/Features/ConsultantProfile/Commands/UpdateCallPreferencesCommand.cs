@@ -1,6 +1,7 @@
 using Faaz.Services.Consultant.Infrastructure.Interfaces;
 using Faaz.Services.Consultant.WebHost.Features.ConsultantProfile.DTOs;
 using Faaz.SharedKernel.Exceptions;
+using MassTransit;
 using MediatR;
 using static Faaz.Services.Consultant.Domain.ConsultantEnums;
 
@@ -15,10 +16,12 @@ public class UpdateCallPreferencesCommand : IRequest
 internal sealed class UpdateCallPreferencesCommandHandler : IRequestHandler<UpdateCallPreferencesCommand>
 {
     private readonly IConsultantProfileServices _profileServices;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public UpdateCallPreferencesCommandHandler(IConsultantProfileServices profileServices)
+    public UpdateCallPreferencesCommandHandler(IConsultantProfileServices profileServices, IPublishEndpoint publishEndpoint)
     {
         _profileServices = profileServices;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task Handle(UpdateCallPreferencesCommand command, CancellationToken ct)
@@ -30,7 +33,8 @@ internal sealed class UpdateCallPreferencesCommandHandler : IRequestHandler<Upda
         profile.MinBookingNoticeHours = command.PutModel.MinBookingNoticeHours;
         profile.MaxAdvanceBookingDays = command.PutModel.MaxAdvanceBookingDays;
 
-        await _profileServices.TryAutoActivateAsync(profile, ct);
+        var activated = await _profileServices.TryAutoActivateAsync(profile, ct);
         await _profileServices.SaveChangesAsync(ct);
+        await ConsultantActivationPublisher.PublishIfActivatedAsync(activated, profile, _publishEndpoint, ct);
     }
 }

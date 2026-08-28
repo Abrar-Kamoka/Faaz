@@ -43,6 +43,8 @@ internal sealed class ConsultantServiceClient : IConsultantServiceClient
             AddField(content, "LinkedInProfileUrl", request.LinkedInProfileUrl);
         if (request.HighestQualification.HasValue)
             AddField(content, "HighestQualification", ((int)request.HighestQualification.Value).ToString());
+        if (request.HighestQualificationOther is not null)
+            AddField(content, "HighestQualificationOther", request.HighestQualificationOther);
         if (request.PrimaryLanguage is not null)
             AddField(content, "PrimaryLanguage", request.PrimaryLanguage);
         if (request.PersonalStatement is not null)

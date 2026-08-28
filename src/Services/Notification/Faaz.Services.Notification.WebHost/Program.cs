@@ -25,7 +25,7 @@ try
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddFaazOpenTelemetry(builder.Configuration, "faaz-notification");
-    builder.Services.AddNotificationInfrastructure(builder.Configuration);
+    builder.Services.AddNotificationInfrastructure(builder.Configuration, builder.Environment);
 
     // JWT: same dynamic JWKS pattern as Student/Consultant services
     var jwksUrl = builder.Configuration["Identity:JwksUrl"];
@@ -126,7 +126,7 @@ try
         x.AddConsumer<BookingDisputedConsumer>();
         x.AddConsumer<DisputeResolvedNotificationConsumer>();
         x.AddConsumer<SessionReminderConsumer>();
-        x.AddConsumer<SessionNoShowConsumer>();
+        x.AddConsumer<SessionNoShowNotificationConsumer>();
         x.AddConsumer<PayoutReleasedNotificationConsumer>();
         x.AddConsumer<PayoutFailedConsumer>();
         x.AddConsumer<RefundIssuedConsumer>();
@@ -139,6 +139,9 @@ try
         x.AddConsumer<ConsultantRestoredByAdminConsumer>();
         x.AddConsumer<UserDeactivatedByAdminConsumer>();
         x.AddConsumer<UserReactivatedByAdminConsumer>();
+        // Phase 5
+        x.AddConsumer<StudentOnboardingCompletedNotificationConsumer>();
+        x.AddConsumer<ConsultantProfileActivatedNotificationConsumer>();
     });
 
     builder.Services.AddSwaggerGen(opts =>

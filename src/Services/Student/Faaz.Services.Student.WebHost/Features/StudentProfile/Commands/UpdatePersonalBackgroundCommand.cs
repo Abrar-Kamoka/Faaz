@@ -2,6 +2,8 @@ using Faaz.Services.Student.Infrastructure.Interfaces;
 using Faaz.Services.Student.WebHost.Features.StudentProfile.DTOs;
 using Faaz.Services.Student.WebHost.HttpClients;
 using Faaz.SharedKernel.Exceptions;
+using Faaz.SharedKernel.IntegrationEvents;
+using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -17,15 +19,18 @@ internal sealed class UpdatePersonalBackgroundCommandHandler : IRequestHandler<U
 {
     private readonly IStudentProfileServices _profileServices;
     private readonly IIdentityServiceClient _identityClient;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<UpdatePersonalBackgroundCommandHandler> _logger;
 
     public UpdatePersonalBackgroundCommandHandler(
         IStudentProfileServices profileServices,
         IIdentityServiceClient identityClient,
+        IPublishEndpoint publishEndpoint,
         ILogger<UpdatePersonalBackgroundCommandHandler> logger)
     {
         _profileServices = profileServices;
         _identityClient  = identityClient;
+        _publishEndpoint = publishEndpoint;
         _logger          = logger;
     }
 
@@ -33,6 +38,8 @@ internal sealed class UpdatePersonalBackgroundCommandHandler : IRequestHandler<U
     {
         var profile = await _profileServices.GetByUserIdAsync(command.UserId, ct)
             ?? throw new NotFoundException("StudentProfile", command.UserId);
+
+        var wasComplete = profile.IsOnboardingComplete;
 
         profile.FirstName            = command.PutModel.FirstName;
         profile.LastName             = command.PutModel.LastName;
@@ -44,6 +51,9 @@ internal sealed class UpdatePersonalBackgroundCommandHandler : IRequestHandler<U
         profile.AdditionalLanguages  = command.PutModel.AdditionalLanguages;
         profile.UpdateCompleteness();
         await _profileServices.SaveChangesAsync(ct);
+
+        if (!wasComplete && profile.IsOnboardingComplete)
+            await _publishEndpoint.Publish(new StudentOnboardingCompletedEvent(profile.UserId, profile.FirstName), ct);
 
         try
         {

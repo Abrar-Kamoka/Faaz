@@ -7,6 +7,15 @@ public class UpdateAvailabilityCommandValidator : AbstractValidator<UpdateAvaila
 {
     public UpdateAvailabilityCommandValidator()
     {
+        RuleFor(x => x.PutModel.TimeZoneId).NotEmpty()
+            .Must(id => TimeZoneInfo.TryFindSystemTimeZoneById(id, out _))
+            .WithMessage("TimeZoneId must be a valid IANA timezone identifier (e.g. 'Europe/London').");
+        RuleFor(x => x.PutModel.MinBookingNoticeHours).InclusiveBetween(0, 168)
+            .When(x => x.PutModel.MinBookingNoticeHours.HasValue)
+            .WithMessage("Minimum notice must be between 0 and 168 hours (1 week).");
+        RuleFor(x => x.PutModel.MaxAdvanceBookingDays).InclusiveBetween(1, 365)
+            .When(x => x.PutModel.MaxAdvanceBookingDays.HasValue)
+            .WithMessage("Max advance booking must be between 1 and 365 days.");
         RuleFor(x => x.PutModel.WeeklySlots).NotNull();
         RuleForEach(x => x.PutModel.WeeklySlots).ChildRules(slot =>
         {

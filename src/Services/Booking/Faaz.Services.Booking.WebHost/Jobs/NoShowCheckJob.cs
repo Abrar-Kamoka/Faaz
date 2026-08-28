@@ -1,5 +1,6 @@
 using Faaz.Services.Booking.Domain.Entities;
 using Faaz.Services.Booking.Infrastructure.Interfaces;
+using Faaz.Services.Booking.Infrastructure.Services;
 using Faaz.SharedKernel.IntegrationEvents;
 using MassTransit;
 using Microsoft.Extensions.Logging;
@@ -11,12 +12,16 @@ namespace Faaz.Services.Booking.WebHost.Jobs
     public class NoShowCheckJob : INoShowCheckJob
     {
         private readonly IBookingServices _bookingServices;
+        private readonly ISessionServices _sessionServices;
         private readonly ISessionParticipantServices _participantServices;
+        private readonly IVideoService _videoService;
         private readonly IPublishEndpoint _publishEndpoint;
         private readonly ILogger<NoShowCheckJob> _logger;
 
-        public NoShowCheckJob(IBookingServices b, ISessionParticipantServices p, IPublishEndpoint pub, ILogger<NoShowCheckJob> l)
-        { _bookingServices = b; _participantServices = p; _publishEndpoint = pub; _logger = l; }
+        public NoShowCheckJob(
+            IBookingServices b, ISessionServices s, ISessionParticipantServices p, IVideoService v,
+            IPublishEndpoint pub, ILogger<NoShowCheckJob> l)
+        { _bookingServices = b; _sessionServices = s; _participantServices = p; _videoService = v; _publishEndpoint = pub; _logger = l; }
 
         public async Task ExecuteAsync(Guid bookingId)
         {
@@ -36,9 +41,21 @@ namespace Faaz.Services.Booking.WebHost.Jobs
                 var noShowStatus = (!studentJoined && !consultantJoined) ? BookingStatus.BothNoShow
                                  : !studentJoined ? BookingStatus.StudentNoShow
                                  : BookingStatus.ConsultantNoShow;
+                var sessionNoShowStatus = (!studentJoined && !consultantJoined) ? SessionStatus.BothNoShow
+                                 : !studentJoined ? SessionStatus.StudentNoShow
+                                 : SessionStatus.ConsultantNoShow;
 
                 _logger.LogWarning("NoShow for booking {Id}: {Status}", bookingId, noShowStatus);
-                await _publishEndpoint.Publish(new SessionNoShowEvent(bookingId, studentJoined, consultantJoined));
+
+                // Own the room cleanup here rather than leaving it to ForceCloseRoomJob — that job only
+                // acts on bookings still Confirmed/InProgress, so once this method moves the booking to
+                // a no-show status, ForceCloseRoomJob would otherwise no-op and leak the LiveKit room.
+                try { await _videoService.DeleteRoomAsync(session.LiveKitRoomName); }
+                catch (Exception ex) { _logger.LogWarning(ex, "Could not delete room {Room}", session.LiveKitRoomName); }
+
+                session.Status       = sessionNoShowStatus;
+                session.ActualEndUtc = DateTime.UtcNow;
+                await _sessionServices.SaveChangesAsync();
 
                 var prevStatus = booking.Status;
                 booking.Status = noShowStatus;
@@ -51,6 +68,9 @@ namespace Faaz.Services.Booking.WebHost.Jobs
                     Notes      = $"No-show: studentJoined={studentJoined}, consultantJoined={consultantJoined}"
                 });
                 await _bookingServices.SaveChangesAsync();
+
+                await _publishEndpoint.Publish(new SessionNoShowEvent(
+                    bookingId, booking.ConsultantUserId, booking.StudentUserId, studentJoined, consultantJoined));
             }
         }
     }

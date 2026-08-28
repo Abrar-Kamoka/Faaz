@@ -183,6 +183,7 @@ public class InternalConsultantApplicationController : ConsultantInternalControl
             a.CountryOfResidence,
             a.LinkedInProfileUrl,
             HighestQualification = a.HighestQualification?.ToString(),
+            a.HighestQualificationOther,
             a.PrimaryLanguage,
             a.PersonalStatement,
             ConsultationMode     = a.ConsultationMode?.ToString(),

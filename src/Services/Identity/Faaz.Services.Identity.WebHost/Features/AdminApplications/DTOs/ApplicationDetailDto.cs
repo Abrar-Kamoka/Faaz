@@ -17,6 +17,7 @@ public sealed record ApplicationDetailDto(
     string? CountryOfResidence,
     string? LinkedInProfileUrl,
     string? HighestQualification,
+    string? HighestQualificationOther,
     string? PrimaryLanguage,
     string? PersonalStatement,
     string? ConsultationMode,

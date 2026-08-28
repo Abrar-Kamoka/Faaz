@@ -2,7 +2,6 @@ using Faaz.Services.Consultant.Infrastructure.Interfaces;
 using Faaz.SharedKernel.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using static Faaz.Services.Consultant.Domain.ConsultantEnums;
 
 namespace Faaz.Services.Consultant.WebHost.Features.ConsultantProfile.Commands;
 
@@ -57,88 +56,12 @@ internal sealed class CreateProfileStubCommandHandler : IRequestHandler<CreatePr
         if (application is null)
             throw new NotFoundException("ConsultantApplication", command.UserId);
 
-        var (studyLevels, subjects, universities, services) = ParseExpertiseArea(application.ExpertiseArea);
-
         // Pre-fill from the EoI so the consultant doesn't re-enter data they already provided.
-        var profile = new Domain.Entities.ConsultantProfile
-        {
-            UserId                  = command.UserId,
-            ApplicationId           = application.Id,
-            FullLegalName           = $"{application.FirstName} {application.LastName}".Trim(),
-            DisplayName             = application.FirstName,
-            CurrentRole             = application.CurrentRole,
-            Institution             = application.Institution ?? string.Empty,
-            LinkedInUrl             = application.LinkedInProfileUrl,
-            YearsOfExperience       = application.YearsOfExperience,
-            StudyLevelsOffered      = studyLevels,
-            SubjectAreas            = subjects,
-            SpecialisedUniversities = universities,
-            ServicesOffered         = services
-        };
+        var profile = ConsultantProfileStubBuilder.Build(command.UserId, application);
 
         await _profileServices.AddAsync(profile, ct);
         await _profileServices.SaveChangesAsync(ct);
 
         _logger.LogInformation("Consultant profile stub created. UserId: {UserId}", command.UserId);
-    }
-
-    // The join-as-consultant EoI wizard has no structured columns for the study-levels/subjects/
-    // universities/services the applicant picks — it flattens all four into one reporting string
-    // on submit, e.g. "Levels: Undergraduate | Subjects: Physics, Maths | Universities: Oxford |
-    // Services: UCAS Guidance". Unpack that same format here so the setup wizard's Expertise step
-    // (which already pre-fills from these exact profile fields) shows it without asking again.
-    private static readonly Dictionary<string, StudyLevel> StudyLevelLabels = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["Sixth Form / A-Levels"]    = StudyLevel.ALevel,
-        ["Undergraduate"]            = StudyLevel.Undergraduate,
-        ["Postgraduate (MSc/PhD)"]   = StudyLevel.Postgraduate,
-    };
-
-    private static readonly Dictionary<string, ServiceType> ServiceLabels = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["Personal Statement Review"] = ServiceType.PersonalStatement,
-        ["UCAS Guidance"]             = ServiceType.Ucas,
-        ["Interview Preparation"]     = ServiceType.InterviewPrep,
-        ["SOP Review"]                = ServiceType.Sop,
-        ["Scholarships"]              = ServiceType.Scholarships,
-        ["Visa Guidance"]             = ServiceType.Visa,
-        ["General Guidance"]          = ServiceType.GeneralGuidance,
-    };
-
-    private static (int[] StudyLevels, string[] Subjects, string[] Universities, int[] Services) ParseExpertiseArea(string? expertiseArea)
-    {
-        if (string.IsNullOrWhiteSpace(expertiseArea))
-            return ([], [], [], []);
-
-        var studyLevels  = new List<int>();
-        var subjects     = new List<string>();
-        var universities = new List<string>();
-        var services     = new List<int>();
-
-        foreach (var segment in expertiseArea.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
-        {
-            var parts = segment.Split(':', 2, StringSplitOptions.TrimEntries);
-            if (parts.Length != 2) continue;
-
-            var values = parts[1].Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-
-            switch (parts[0])
-            {
-                case "Levels":
-                    studyLevels.AddRange(values.Where(StudyLevelLabels.ContainsKey).Select(v => (int)StudyLevelLabels[v]));
-                    break;
-                case "Subjects":
-                    subjects.AddRange(values);
-                    break;
-                case "Universities":
-                    universities.AddRange(values);
-                    break;
-                case "Services":
-                    services.AddRange(values.Where(ServiceLabels.ContainsKey).Select(v => (int)ServiceLabels[v]));
-                    break;
-            }
-        }
-
-        return (studyLevels.ToArray(), subjects.ToArray(), universities.ToArray(), services.ToArray());
     }
 }

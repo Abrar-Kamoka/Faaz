@@ -71,6 +71,12 @@ public class InternalAdminUsersController : FaazApiController
                 Role        = (int)u.Role,
                 RoleNames   = roleNames,
                 IsActive    = u.Status == UserStatus.Active,
+                // Active/Inactive alone is misleading for consultants — Status only reaches Active
+                // after admin approval, well past email verification, so a fully-verified consultant
+                // still building their profile shows "Inactive" here even though nothing is wrong.
+                // Surface the real lifecycle stage for consultants; null for everyone else, where the
+                // simple Active/Inactive binary is already accurate (one gate: email verification).
+                ConsultantApplicationStatus = u.Role == UserRole.Consultant ? (int?)u.ConsultantApplicationStatus : null,
                 CreatedAt   = u.CreatedAt ?? DateTime.MinValue,
                 PhoneNumber = u.PhoneNumber
             });
@@ -96,6 +102,7 @@ public class InternalAdminUsersController : FaazApiController
             user.LastName,
             Role        = (int)user.Role,
             IsActive    = user.Status == UserStatus.Active,
+            ConsultantApplicationStatus = user.Role == UserRole.Consultant ? (int?)user.ConsultantApplicationStatus : null,
             CreatedAt   = user.CreatedAt ?? DateTime.MinValue,
             user.PhoneNumber
         }));

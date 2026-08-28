@@ -53,25 +53,26 @@ internal sealed class RegisterConsultantCommandHandler : IRequestHandler<Registe
 
         var request = new ApplicationSubmissionRequest
         {
-            Email              = dto.Email,
-            FirstName          = dto.FirstName,
-            LastName           = dto.LastName,
-            PhoneNumber        = dto.PhoneNumber,
-            IsUkBased          = dto.IsUkBased,
-            CurrentRole        = dto.CurrentRole,
-            Institution        = dto.Institution,
-            ExpertiseArea      = dto.ExpertiseArea,
-            YearsOfExperience  = dto.YearsOfExperience,
-            DateOfBirth        = dto.DateOfBirth,
-            Nationality        = dto.Nationality,
-            CountryOfResidence = dto.CountryOfResidence,
-            LinkedInProfileUrl = dto.LinkedInProfileUrl,
-            HighestQualification = dto.HighestQualification,
-            PrimaryLanguage    = dto.PrimaryLanguage,
-            PersonalStatement  = dto.PersonalStatement,
-            ConsultationMode   = dto.ConsultationMode,
-            ReferralSource     = dto.ReferralSource,
-            Documents          = documents
+            Email                     = dto.Email,
+            FirstName                 = dto.FirstName,
+            LastName                  = dto.LastName,
+            PhoneNumber               = dto.PhoneNumber,
+            IsUkBased                 = dto.IsUkBased,
+            CurrentRole               = dto.CurrentRole,
+            Institution               = dto.Institution,
+            ExpertiseArea             = dto.ExpertiseArea,
+            YearsOfExperience         = dto.YearsOfExperience,
+            DateOfBirth               = dto.DateOfBirth,
+            Nationality               = dto.Nationality,
+            CountryOfResidence        = dto.CountryOfResidence,
+            LinkedInProfileUrl        = dto.LinkedInProfileUrl,
+            HighestQualification      = dto.HighestQualification,
+            HighestQualificationOther = dto.HighestQualificationOther,
+            PrimaryLanguage           = dto.PrimaryLanguage,
+            PersonalStatement         = dto.PersonalStatement,
+            ConsultationMode          = dto.ConsultationMode,
+            ReferralSource            = dto.ReferralSource,
+            Documents                 = documents
         };
 
         var applicationId = await _consultantClient.InitialiseApplicationAsync(request, ct);

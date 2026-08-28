@@ -1,0 +1,11 @@
+# Local dev config for livekit-server. Matches Faaz.Services.Booking.WebHost's
+# appsettings.Development.json LiveKit:ApiKey / LiveKit:ApiSecret — the two MUST match, since
+# LiveKit uses symmetric HMAC signing (the server verifies tokens with the same secret the app
+# signed them with). Regenerate both together with `livekit-server generate-keys` if ever rotated.
+#
+# Format per LiveKit's own config-sample.yaml (https://github.com/livekit/livekit/blob/master/config-sample.yaml):
+#   keys:
+#     <api-key>: <api-secret>
+port: 7880
+keys:
+  API5ETGEL2fL3Na: D7FF8DvDbDGmzNeQL4HeUzHm9WmqtCKONt7uFeqriYXA

@@ -20,6 +20,7 @@ public sealed record ApplicationSubmissionRequest
     public string? CountryOfResidence { get; init; }
     public string? LinkedInProfileUrl { get; init; }
     public HighestQualification? HighestQualification { get; init; }
+    public string? HighestQualificationOther { get; init; }
     public string? PrimaryLanguage { get; init; }
     public string? PersonalStatement { get; init; }
     public ConsultationMode? ConsultationMode { get; init; }

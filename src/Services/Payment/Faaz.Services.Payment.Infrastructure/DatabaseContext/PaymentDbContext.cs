@@ -10,6 +10,12 @@ namespace Faaz.Services.Payment.Infrastructure.DatabaseContext
     {
         public PaymentDbContext(DbContextOptions<PaymentDbContext> options) : base(options) { }
 
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        {
+            configurationBuilder.ConfigureUtcDateTimeConvention();
+            base.ConfigureConventions(configurationBuilder);
+        }
+
         public DbSet<Payment>             Payments             { get; set; }
         public DbSet<Refund>              Refunds              { get; set; }
         public DbSet<Payout>              Payouts              { get; set; }

@@ -52,7 +52,8 @@ public class PromoCodesAdminController(
         var ok      = await paymentClient.UpdatePromoCodeAsync(id, req, ct);
         if (!ok) return StatusCode(502, ApiResponse.Fail(502, "Failed to update promo code."));
 
-        await LogAsync(adminId, AdminAction.UpdatePromoCode, id, $"Id={id}", ct);
+        // No notes needed — the audit log resolves EntityId to the promo code's own display name.
+        await LogAsync(adminId, AdminAction.UpdatePromoCode, id, null, ct);
 
         return Ok(ApiResponse.NoContent("Promo code updated."));
     }
@@ -64,12 +65,12 @@ public class PromoCodesAdminController(
         var ok      = await paymentClient.DeactivatePromoCodeAsync(id, ct);
         if (!ok) return StatusCode(502, ApiResponse.Fail(502, "Failed to deactivate promo code."));
 
-        await LogAsync(adminId, AdminAction.DeactivatePromoCode, id, $"Id={id}", ct);
+        await LogAsync(adminId, AdminAction.DeactivatePromoCode, id, null, ct);
 
         return Ok(ApiResponse.NoContent("Promo code deactivated."));
     }
 
-    private async Task LogAsync(Guid adminId, AdminAction action, Guid entityId, string notes, CancellationToken ct)
+    private async Task LogAsync(Guid adminId, AdminAction action, Guid entityId, string? notes, CancellationToken ct)
     {
         var srNo = await auditLog.NewSerialNumberAsync(ct);
         await auditLog.AddAsync(new AdminActionLog

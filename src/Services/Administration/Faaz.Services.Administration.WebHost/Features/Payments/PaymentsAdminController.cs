@@ -48,7 +48,7 @@ public class PaymentsAdminController(
         if (RequirePermission("payments.refund") is { } denied) return denied;
 
         var adminId = GetUserId();
-        var ok = await paymentClient.RefundTransactionAsync(transactionId, adminId, req.Reason, ct);
+        var ok = await paymentClient.RefundTransactionAsync(transactionId, adminId, req.Reason, req.Amount, ct);
         if (!ok)
             return Problem("Failed to process refund", statusCode: 502);
 
@@ -91,4 +91,4 @@ public class PaymentsAdminController(
     }
 }
 
-public record RefundRequest(string Reason);
+public record RefundRequest(string Reason, decimal? Amount = null);

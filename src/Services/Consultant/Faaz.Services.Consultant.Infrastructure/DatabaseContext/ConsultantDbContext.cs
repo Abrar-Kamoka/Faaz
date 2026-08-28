@@ -9,6 +9,12 @@ public class ConsultantDbContext : DbContext
 {
     public ConsultantDbContext(DbContextOptions<ConsultantDbContext> options) : base(options) { }
 
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.ConfigureUtcDateTimeConvention();
+        base.ConfigureConventions(configurationBuilder);
+    }
+
     public DbSet<ConsultantApplication> ConsultantApplications => Set<ConsultantApplication>();
     public DbSet<ConsultantApplicationDocument> ConsultantApplicationDocuments => Set<ConsultantApplicationDocument>();
     public DbSet<ConsultantProfile> ConsultantProfiles => Set<ConsultantProfile>();
@@ -64,6 +70,7 @@ public class ConsultantDbContext : DbContext
             nameof(ConsultantProfile.StudyLevelsOffered), nameof(ConsultantProfile.SubjectAreas), nameof(ConsultantProfile.SpecialisedUniversities),
             nameof(ConsultantProfile.ServicesOffered), nameof(ConsultantProfile.WrittenBio), nameof(ConsultantProfile.IntroVideoUrl),
             nameof(ConsultantProfile.CallPreference), nameof(ConsultantProfile.MinBookingNoticeHours), nameof(ConsultantProfile.MaxAdvanceBookingDays),
+            nameof(ConsultantProfile.TimeZoneId),
             nameof(ConsultantProfile.IsProfileComplete), nameof(ConsultantProfile.IsActive), nameof(ConsultantProfile.IsFeatured),
             nameof(ConsultantProfile.StripeAccountId), nameof(ConsultantProfile.IsStripeDetailsSubmitted), nameof(ConsultantProfile.IsStripeChargesEnabled));
 
@@ -74,8 +81,8 @@ public class ConsultantDbContext : DbContext
 
         builder.Entity<ConsultantAvailabilitySlot>().ApplyStandardColumnOrder(
             nameof(ConsultantAvailabilitySlot.ConsultantProfileId), nameof(ConsultantAvailabilitySlot.IsBlockedDate),
-            nameof(ConsultantAvailabilitySlot.DayOfWeek), nameof(ConsultantAvailabilitySlot.StartTimeUtc),
-            nameof(ConsultantAvailabilitySlot.EndTimeUtc), nameof(ConsultantAvailabilitySlot.Date), nameof(ConsultantAvailabilitySlot.Reason));
+            nameof(ConsultantAvailabilitySlot.DayOfWeek), nameof(ConsultantAvailabilitySlot.StartTimeLocal),
+            nameof(ConsultantAvailabilitySlot.EndTimeLocal), nameof(ConsultantAvailabilitySlot.Date), nameof(ConsultantAvailabilitySlot.Reason));
 
         builder.Entity<ConsultantCredential>().ApplyStandardColumnOrder(
             nameof(ConsultantCredential.ConsultantProfileId), nameof(ConsultantCredential.FileName), nameof(ConsultantCredential.StoredPath),

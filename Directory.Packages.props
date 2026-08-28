@@ -75,7 +75,7 @@
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.8" />
   </ItemGroup>
   <ItemGroup Label="Phase 3 — Video / Payments / Background Jobs">
-    <PackageVersion Include="Livekit.Server.Sdk.Dotnet" Version="1.2.2" />
+    <PackageVersion Include="Livekit.Server.Sdk.Dotnet" Version="1.2.3" />
     <PackageVersion Include="Stripe.net" Version="47.2.0" />
     <PackageVersion Include="Hangfire.Core" Version="1.8.14" />
     <PackageVersion Include="Hangfire.SqlServer" Version="1.8.14" />

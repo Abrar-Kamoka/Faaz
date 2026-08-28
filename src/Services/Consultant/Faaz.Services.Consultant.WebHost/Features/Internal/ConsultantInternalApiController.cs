@@ -1,5 +1,7 @@
 using Faaz.Services.Consultant.Infrastructure.Interfaces;
+using Faaz.Services.Consultant.WebHost.Features.ConsultantProfile;
 using Faaz.SharedKernel.Results;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 
@@ -10,11 +12,13 @@ namespace Faaz.Services.Consultant.WebHost.Features.Internal;
 public class ConsultantInternalApiController : ConsultantInternalController
 {
     private readonly IConsultantProfileServices _profileServices;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public ConsultantInternalApiController(IConsultantProfileServices profileServices, IConfiguration config)
+    public ConsultantInternalApiController(IConsultantProfileServices profileServices, IPublishEndpoint publishEndpoint, IConfiguration config)
         : base(config)
     {
         _profileServices = profileServices;
+        _publishEndpoint = publishEndpoint;
     }
 
     [HttpGet("slot-check")]
@@ -48,19 +52,26 @@ public class ConsultantInternalApiController : ConsultantInternalController
         if ((utcStart - now).TotalDays > profile.MaxAdvanceBookingDays)
             return Ok(new { isAvailable = false, consultantUserId = Guid.Empty, sessionTypeName = "", sessionPriceGbp = 0m, durationMinutes = 0 });
 
+        // AvailabilitySlots (blocked dates + weekly windows) are wall-clock values in the
+        // consultant's own timezone, not UTC — convert the proposed UTC instant into that timezone
+        // before comparing, otherwise both the date and the day-of-week can land on the wrong side
+        // of midnight for a consultant whose local offset differs from UTC.
+        var tz = TimeZoneInfo.FindSystemTimeZoneById(profile.TimeZoneId);
+        var localStart = TimeZoneInfo.ConvertTimeFromUtc(utcStart, tz);
+
         // Blocked date check
-        var slotDate = DateOnly.FromDateTime(utcStart);
+        var slotDate = DateOnly.FromDateTime(localStart);
         if (profile.AvailabilitySlots.Any(s => s.IsBlockedDate && s.Date == slotDate))
             return Ok(new { isAvailable = false, consultantUserId = Guid.Empty, sessionTypeName = "", sessionPriceGbp = 0m, durationMinutes = 0 });
 
         // DayOfWeek + time window check
-        var slotTime   = TimeOnly.FromDateTime(utcStart);
-        var dayOfWeek  = utcStart.DayOfWeek;
+        var slotTime   = TimeOnly.FromDateTime(localStart);
+        var dayOfWeek  = localStart.DayOfWeek;
         var inWindow   = profile.AvailabilitySlots.Any(s =>
             !s.IsBlockedDate &&
-            s.DayOfWeek     == dayOfWeek &&
-            s.StartTimeUtc  <= slotTime &&
-            s.EndTimeUtc    >= slotTime);
+            s.DayOfWeek       == dayOfWeek &&
+            s.StartTimeLocal  <= slotTime &&
+            s.EndTimeLocal    >= slotTime);
 
         if (!inWindow)
             return Ok(new { isAvailable = false, consultantUserId = Guid.Empty, sessionTypeName = "", sessionPriceGbp = 0m, durationMinutes = 0 });
@@ -98,9 +109,9 @@ public class ConsultantInternalApiController : ConsultantInternalController
             .Where(s => !s.IsBlockedDate)
             .Select(s => new
             {
-                DayOfWeek    = (int)s.DayOfWeek!.Value,
-                StartTimeUtc = s.StartTimeUtc!.Value.ToString("HH:mm:ss"),
-                EndTimeUtc   = s.EndTimeUtc!.Value.ToString("HH:mm:ss")
+                DayOfWeek      = (int)s.DayOfWeek!.Value,
+                StartTimeLocal = s.StartTimeLocal!.Value.ToString("HH:mm:ss"),
+                EndTimeLocal   = s.EndTimeLocal!.Value.ToString("HH:mm:ss")
             }).ToList();
 
         var blockedDates = profile.AvailabilitySlots
@@ -110,6 +121,7 @@ public class ConsultantInternalApiController : ConsultantInternalController
 
         return Ok(new
         {
+            timeZoneId            = profile.TimeZoneId,
             weeklySlots           = weeklySlots,
             blockedDates          = blockedDates,
             durationMinutes       = sessionType.DurationMinutes,
@@ -174,8 +186,9 @@ public class ConsultantInternalApiController : ConsultantInternalController
         profile.IsStripeDetailsSubmitted = dto.DetailsSubmitted;
         profile.IsStripeChargesEnabled   = dto.ChargesEnabled;
 
-        await _profileServices.TryAutoActivateAsync(profile, ct);
+        var activated = await _profileServices.TryAutoActivateAsync(profile, ct);
         await _profileServices.SaveChangesAsync(ct);
+        await ConsultantActivationPublisher.PublishIfActivatedAsync(activated, profile, _publishEndpoint, ct);
         return Ok(ApiResponse.NoContent());
     }
 

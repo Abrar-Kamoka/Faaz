@@ -1,6 +1,7 @@
 using Faaz.Services.Consultant.Infrastructure.Interfaces;
 using Faaz.Services.Consultant.WebHost.Features.ConsultantProfile.DTOs;
 using Faaz.SharedKernel.Exceptions;
+using MassTransit;
 using MediatR;
 
 namespace Faaz.Services.Consultant.WebHost.Features.ConsultantProfile.Commands;
@@ -14,10 +15,12 @@ public class UpdateBioAndVideoCommand : IRequest
 internal sealed class UpdateBioAndVideoCommandHandler : IRequestHandler<UpdateBioAndVideoCommand>
 {
     private readonly IConsultantProfileServices _profileServices;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public UpdateBioAndVideoCommandHandler(IConsultantProfileServices profileServices)
+    public UpdateBioAndVideoCommandHandler(IConsultantProfileServices profileServices, IPublishEndpoint publishEndpoint)
     {
         _profileServices = profileServices;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task Handle(UpdateBioAndVideoCommand command, CancellationToken ct)
@@ -28,7 +31,8 @@ internal sealed class UpdateBioAndVideoCommandHandler : IRequestHandler<UpdateBi
         profile.WrittenBio = command.PutModel.WrittenBio;
         profile.IntroVideoUrl = command.PutModel.IntroVideoUrl;
 
-        await _profileServices.TryAutoActivateAsync(profile, ct);
+        var activated = await _profileServices.TryAutoActivateAsync(profile, ct);
         await _profileServices.SaveChangesAsync(ct);
+        await ConsultantActivationPublisher.PublishIfActivatedAsync(activated, profile, _publishEndpoint, ct);
     }
 }

@@ -2,6 +2,7 @@ using Faaz.Services.Consultant.Domain.Entities;
 using Faaz.Services.Consultant.Infrastructure.Interfaces;
 using Faaz.Services.Consultant.WebHost.Features.ConsultantProfile.DTOs;
 using Faaz.SharedKernel.Exceptions;
+using MassTransit;
 using MediatR;
 
 namespace Faaz.Services.Consultant.WebHost.Features.ConsultantProfile.Commands;
@@ -15,16 +16,24 @@ public class UpdateAvailabilityCommand : IRequest
 internal sealed class UpdateAvailabilityCommandHandler : IRequestHandler<UpdateAvailabilityCommand>
 {
     private readonly IConsultantProfileServices _profileServices;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public UpdateAvailabilityCommandHandler(IConsultantProfileServices profileServices)
+    public UpdateAvailabilityCommandHandler(IConsultantProfileServices profileServices, IPublishEndpoint publishEndpoint)
     {
         _profileServices = profileServices;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task Handle(UpdateAvailabilityCommand command, CancellationToken ct)
     {
         var profile = await _profileServices.GetByUserIdWithCollectionsAsync(command.UserId, ct)
             ?? throw new NotFoundException("ConsultantProfile", command.UserId);
+
+        profile.TimeZoneId = command.PutModel.TimeZoneId;
+        if (command.PutModel.MinBookingNoticeHours.HasValue)
+            profile.MinBookingNoticeHours = command.PutModel.MinBookingNoticeHours.Value;
+        if (command.PutModel.MaxAdvanceBookingDays.HasValue)
+            profile.MaxAdvanceBookingDays = command.PutModel.MaxAdvanceBookingDays.Value;
 
         // Soft-delete all existing entries (both weekly slots and blocked dates).
         // Never use collection.Clear() — it generates hard DELETEs which fail with the
@@ -40,8 +49,8 @@ internal sealed class UpdateAvailabilityCommandHandler : IRequestHandler<UpdateA
                 ConsultantProfileId = profile.Id,
                 IsBlockedDate       = false,
                 DayOfWeek           = (DayOfWeek)slot.DayOfWeek,
-                StartTimeUtc        = slot.StartTime,
-                EndTimeUtc          = slot.EndTime
+                StartTimeLocal      = slot.StartTime,
+                EndTimeLocal        = slot.EndTime
             }, ct);
         }
 
@@ -56,7 +65,8 @@ internal sealed class UpdateAvailabilityCommandHandler : IRequestHandler<UpdateA
             }, ct);
         }
 
-        await _profileServices.TryAutoActivateAsync(profile, ct);
+        var activated = await _profileServices.TryAutoActivateAsync(profile, ct);
         await _profileServices.SaveChangesAsync(ct);
+        await ConsultantActivationPublisher.PublishIfActivatedAsync(activated, profile, _publishEndpoint, ct);
     }
 }

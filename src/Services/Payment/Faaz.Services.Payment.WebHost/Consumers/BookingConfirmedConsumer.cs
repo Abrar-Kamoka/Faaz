@@ -17,10 +17,11 @@ namespace Faaz.Services.Payment.WebHost.Consumers
     {
         private readonly IPaymentServices _paymentServices;
         private readonly IPaymentGateway _gateway;
+        private readonly IPublishEndpoint _publishEndpoint;
         private readonly ILogger<BookingConfirmedConsumer> _logger;
 
-        public BookingConfirmedConsumer(IPaymentServices ps, IPaymentGateway gw, ILogger<BookingConfirmedConsumer> l)
-        { _paymentServices = ps; _gateway = gw; _logger = l; }
+        public BookingConfirmedConsumer(IPaymentServices ps, IPaymentGateway gw, IPublishEndpoint pub, ILogger<BookingConfirmedConsumer> l)
+        { _paymentServices = ps; _gateway = gw; _publishEndpoint = pub; _logger = l; }
 
         public async Task Consume(ConsumeContext<BookingConfirmedEvent> context)
         {
@@ -38,9 +39,25 @@ namespace Faaz.Services.Payment.WebHost.Consumers
 
             var result = await _gateway.CapturePaymentIntentAsync(payment.StripePaymentIntentId);
             if (!result.Success)
+            {
+                // The consultant already accepted (AcceptBookingCommand set the booking Confirmed and
+                // scheduled the session/reminders BEFORE this async capture attempt runs), but the card
+                // that was authorized at checkout can still fail here — expired/cancelled between
+                // authorization and acceptance, issuer fraud block, etc. Without this, the booking would
+                // stay stuck "Confirmed" with no money ever actually collected and nothing telling anyone.
+                // Reuse the same PaymentFailedEvent/consumer the initial-authorization-failure path uses
+                // so Booking's existing rollback (CancelledPaymentFailed) handles this uniformly.
                 _logger.LogError(
                     "Capture failed for booking {BookingId}, intent {IntentId}: {Error}",
                     msg.BookingId, payment.StripePaymentIntentId, result.ErrorMessage);
+
+                payment.Status         = PaymentStatus.Failed;
+                payment.FailureMessage = result.ErrorMessage;
+                await _paymentServices.SaveChangesAsync();
+
+                await _publishEndpoint.Publish(new PaymentFailedEvent(
+                    payment.BookingId, payment.StripePaymentIntentId, result.ErrorMessage ?? "Capture failed"));
+            }
         }
     }
 }

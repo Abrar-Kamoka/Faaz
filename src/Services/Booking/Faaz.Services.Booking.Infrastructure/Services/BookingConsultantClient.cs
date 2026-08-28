@@ -12,12 +12,16 @@ public interface IBookingConsultantClient
 
 public record SlotCheckResult(bool IsAvailable, Guid ConsultantUserId, string SessionTypeName, decimal SessionPriceGbp, int DurationMinutes);
 public record ConsultantScheduleResult(
+    string TimeZoneId,
     List<WeeklySlotItem> WeeklySlots,
     List<string> BlockedDates,
     int DurationMinutes,
     int MinBookingNoticeHours,
     int MaxAdvanceBookingDays);
-public record WeeklySlotItem(int DayOfWeek, string StartTimeUtc, string EndTimeUtc);
+// Wall-clock times in TimeZoneId above, not UTC — a recurring weekly slot can't be a fixed UTC
+// instant once DST is involved, since the true UTC offset shifts twice a year in any zone that
+// observes it. Convert with TimeZoneInfo per-date at the point of use instead.
+public record WeeklySlotItem(int DayOfWeek, string StartTimeLocal, string EndTimeLocal);
 
 internal sealed class BookingConsultantClient : IBookingConsultantClient
 {

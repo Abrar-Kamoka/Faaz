@@ -86,12 +86,33 @@ public class PaymentAdminInternalController : ControllerBase
         if (string.IsNullOrWhiteSpace(payment.StripeChargeId))
             return BadRequest(ApiResponse.Fail(400, "Payment has not been captured yet and cannot be refunded."));
 
-        var stripeResult = await _gateway.CreateRefundAsync(payment.StripeChargeId, payment.Amount, req.Reason, ct);
+        // Money for this booking has already been transferred out to the consultant's Connect account
+        // (see PayoutReleasedConsumer). A plain refund from here would take the money from the platform's
+        // own balance a second time while the consultant keeps what they were already paid — the same
+        // underlying issue disputes/appeals guard against via their own SettledAt checks. Claw-back in
+        // this state needs an explicit Stripe transfer reversal, which is a deliberate manual action, not
+        // something this button should trigger silently.
+        var existingPayout = await _payouts.GetByBookingIdAsync(payment.BookingId, ct);
+        if (existingPayout is { Status: PayoutStatus.Paid })
+            return BadRequest(ApiResponse.Fail(400,
+                "Cannot refund — the payout for this booking has already been released to the consultant. This needs a manual transfer reversal, not a customer refund."));
+
+        // Default to a full refund of whatever hasn't been refunded yet; admins can specify a smaller
+        // goodwill amount instead of only ever being able to refund everything or nothing.
+        var alreadyRefunded = payment.Refunds.Where(r => r.Status == RefundStatus.Succeeded).Sum(r => r.Amount);
+        var refundableAmount = payment.Amount - alreadyRefunded;
+        var amountToRefund = req.Amount ?? refundableAmount;
+
+        if (amountToRefund <= 0 || amountToRefund > refundableAmount)
+            return BadRequest(ApiResponse.Fail(400, $"Refund amount must be between 0 and {refundableAmount:0.00} (already refunded: {alreadyRefunded:0.00})."));
+
+        var stripeResult = await _gateway.CreateRefundAsync(payment.StripeChargeId, amountToRefund, req.Reason, ct);
         if (!stripeResult.Success)
             return StatusCode(502, ApiResponse.Fail(502, $"Stripe refund failed: {stripeResult.ErrorMessage}"));
 
-        // Mark payment as refunded; the charge.refunded webhook will create the Refund record with StripeRefundId
-        payment.Status = PaymentStatus.Refunded;
+        // Mark payment as refunded/partially refunded; the charge.refunded webhook will create the
+        // Refund record itself with the real StripeRefundId once it lands.
+        payment.Status = amountToRefund >= refundableAmount ? PaymentStatus.Refunded : PaymentStatus.PartialRefund;
         await _payments.SaveChangesAsync(ct);
 
         return Ok(ApiResponse.NoContent("Refund issued via Stripe."));
@@ -181,4 +202,4 @@ public class PaymentAdminInternalController : ControllerBase
     }
 }
 
-public record AdminRefundBody(Guid AdminId, string Reason);
+public record AdminRefundBody(Guid AdminId, string Reason, decimal? Amount = null);

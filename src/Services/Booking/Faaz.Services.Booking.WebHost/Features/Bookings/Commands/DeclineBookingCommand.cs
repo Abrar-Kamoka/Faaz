@@ -50,7 +50,7 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
             await _bookingServices.SaveChangesAsync(ct);
 
             await _publishEndpoint.Publish(new BookingCancelledEvent(
-                booking.Id, $"consultant-{command.RequestingConsultantId}", "Consultant declined",
+                booking.Id, booking.ConsultantUserId, booking.StudentUserId, $"consultant-{command.RequestingConsultantId}", "Consultant declined",
                 RefundRequired: true, RefundAmount: booking.TotalChargedGbp), ct);
         }
     }
