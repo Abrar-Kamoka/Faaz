@@ -1,6 +1,7 @@
 using Faaz.BuildingBlocks.Persistence;
 using Faaz.Services.Booking.Domain.Entities;
 using Faaz.SharedKernel.Entities;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace Faaz.Services.Booking.Infrastructure.DatabaseContext
@@ -32,6 +33,11 @@ namespace Faaz.Services.Booking.Infrastructure.DatabaseContext
         {
             builder.HasDefaultSchema("booking");
             builder.ApplyConfigurationsFromAssembly(typeof(BookingDbContext).Assembly);
+
+            // MassTransit EF outbox — see AddFaazRabbitMqWithOutbox<BookingDbContext> in Program.cs.
+            builder.AddInboxStateEntity();
+            builder.AddOutboxMessageEntity();
+            builder.AddOutboxStateEntity();
 
             // SrNo is managed by application code (NewSerialNumberAsync → MAX+1), not by the database.
             foreach (var entity in builder.Model.GetEntityTypes()

@@ -27,6 +27,11 @@ namespace Faaz.Services.Booking.WebHost.Jobs
                 new DateTimeOffset(booking.ScheduledStartUtc, TimeSpan.Zero),
                 reminderType));
 
+            // No booking mutation here, but the EF outbox only flushes a published message on a
+            // SaveChangesAsync call against the same DbContext — without this, the message above
+            // would stay buffered in memory and never reach the broker.
+            await _bookingServices.SaveChangesAsync();
+
             _logger.LogInformation("Session reminder {Type} published for booking {Id}", reminderType, bookingId);
         }
     }

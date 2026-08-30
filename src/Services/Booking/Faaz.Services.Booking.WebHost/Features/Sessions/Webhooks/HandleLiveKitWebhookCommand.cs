@@ -276,6 +276,9 @@ namespace Faaz.Services.Booking.WebHost.Features.Sessions.Webhooks
                     ? ParticipantConnectionStatus.JoinedCompleted
                     : ParticipantConnectionStatus.DisconnectedAndRejoined;
 
+            // Published before the SaveChangesAsync calls below so the EF outbox captures it atomically.
+            await _publishEndpoint.Publish(new SessionCompletedEvent(booking.Id, new DateTimeOffset(occurredAt), actualSeconds), ct);
+
             await _sessionServices.SaveChangesAsync(ct);
             await _bookingServices.SaveChangesAsync(ct);
 
@@ -283,7 +286,6 @@ namespace Faaz.Services.Booking.WebHost.Features.Sessions.Webhooks
                 isEarly ? SessionEventType.SessionCompletedEarly : SessionEventType.SessionCompleted,
                 null, null, occurredAt, ct);
 
-            await _publishEndpoint.Publish(new SessionCompletedEvent(booking.Id, new DateTimeOffset(occurredAt), actualSeconds), ct);
             _logger.LogInformation("LiveKit room finished for session {SessionId}; completionPct={Pct}%", session.Id, session.CompletionPct);
         }
 

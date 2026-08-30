@@ -10,22 +10,7 @@ public class ConsultantEnums
         Both      = 3
     }
 
-    public enum StudyLevel
-    {
-        ALevel        = 1,
-        Undergraduate = 2,
-        Postgraduate  = 3,
-        Phd           = 4
-    }
-
-    public enum ServiceType
-    {
-        PersonalStatement = 1,
-        Ucas              = 2,
-        InterviewPrep     = 3,
-        Sop               = 4,
-        Scholarships      = 5,
-        Visa              = 6,
-        GeneralGuidance   = 7
-    }
+    // StudyLevel and ServiceType used to live here — replaced by Faaz.SharedKernel.SharedEnums.StudyLevel
+    // and the Administration service's admin-editable Service catalog (see ConsultantProfileService),
+    // so a consultant's expertise references the same real, curated data students see in the wizard.
 }

@@ -1,6 +1,7 @@
 using Faaz.BuildingBlocks.Extensions;
 using Faaz.Services.Identity.Infrastructure.DatabaseContext;
 using Faaz.Services.Identity.Infrastructure.Extensions;
+using Faaz.Services.Identity.WebHost.Consumers;
 using Faaz.Services.Identity.WebHost.Extensions;
 using Faaz.Services.Identity.WebHost.Seeding;
 using Microsoft.AspNetCore.RateLimiting;
@@ -29,17 +30,25 @@ try
     builder.Services.AddFaazOpenTelemetry(builder.Configuration, "faaz-identity");
     builder.Services.AddIdentityInfrastructure(builder.Configuration, typeof(Program).Assembly, builder.Environment);
     builder.Services.AddIdentityHttpClients(builder.Configuration, builder.Environment);
-    // Identity only publishes these events (StudentRegistered, SendVerificationEmail,
-    // ConsultantEmailVerified, ConsultantApproved/Rejected/RevisionRequested, ...) — it never
-    // consumes its own. Notification, Consultant, and Student services already register real,
-    // unconditional consumers for all of them. There used to be a set of "dev" consumers registered
-    // here too, from back when Development used an in-memory MassTransit transport that couldn't
-    // cross process boundaries (so Identity had to handle its own events locally to get any email
-    // at all). AddFaazRabbitMq now always connects to the real broker regardless of environment, so
-    // those dev consumers had become pure duplicates of the real ones — every event fired twice
+    // Identity mostly only publishes events (StudentRegistered, SendVerificationEmail,
+    // ConsultantEmailVerified, ConsultantApproved/Rejected/RevisionRequested, ...) that Notification,
+    // Consultant, and Student consume — it never consumed its own. There used to be a set of "dev"
+    // consumers registered here too, from back when Development used an in-memory MassTransit
+    // transport that couldn't cross process boundaries (so Identity had to handle its own events
+    // locally to get any email at all). AddFaazRabbitMq now always connects to the real broker
+    // regardless of environment, so those dev consumers had become pure duplicates of the real ones
     // (e.g. two verification emails) whenever Identity ran with ASPNETCORE_ENVIRONMENT=Development
     // alongside the other services.
-    builder.Services.AddFaazRabbitMq(builder.Configuration, builder.Environment, x => { });
+    //
+    // ConsultantProfileActivatedEvent is the one exception: it's published by Consultant service when
+    // a profile auto-completes, and until now only Notification consumed it (welcome email). Identity
+    // had no way to learn about it except a consultant's next login re-running the same completeness
+    // check — so a profile that became complete with no further login stayed stuck at "Setting Up
+    // Profile" in the admin panel indefinitely. ConsultantProfileActivatedStatusConsumer closes that gap.
+    builder.Services.AddFaazRabbitMq(builder.Configuration, builder.Environment, x =>
+    {
+        x.AddConsumer<ConsultantProfileActivatedStatusConsumer>();
+    });
 
     // Rate limiting — keyed by remote IP to slow brute-force and enumeration attacks.
     builder.Services.AddRateLimiter(opts =>

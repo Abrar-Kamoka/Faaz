@@ -66,7 +66,10 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
 
             var createRoomJobId = _jobs.Schedule<ICreateSessionRoomJob>(j => j.ExecuteAsync(booking.Id), start.AddMinutes(-5));
             var noShowJobId     = _jobs.Schedule<INoShowCheckJob>(j => j.ExecuteAsync(booking.Id), start.AddMinutes(15));
-            var forceCloseJobId = _jobs.Schedule<IForceCloseRoomJob>(j => j.ExecuteAsync(booking.Id), start.AddMinutes(duration + 20));
+            // Hard cutoff exactly at the booked end time — no grace period. A grace window here would
+            // ripple into payment/payout timing, no-show/attendance tracking, and the consultant's next
+            // booking potentially starting while they're still in this room; deliberately not doing that.
+            var forceCloseJobId = _jobs.Schedule<IForceCloseRoomJob>(j => j.ExecuteAsync(booking.Id), start.AddMinutes(duration));
 
             _jobs.Schedule<ISendSessionReminderJob>(j => j.ExecuteAsync(booking.Id, "T24h"),   start.AddHours(-24));
             _jobs.Schedule<ISendSessionReminderJob>(j => j.ExecuteAsync(booking.Id, "T1h"),    start.AddHours(-1));
@@ -77,12 +80,13 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
             session.NoShowJobId     = noShowJobId;
             session.ForceCloseJobId = forceCloseJobId;
 
-            await _sessionServices.SaveChangesAsync(ct);
-            await _bookingServices.SaveChangesAsync(ct);
-
+            // Published before either SaveChangesAsync so the EF outbox captures it atomically.
             await _publishEndpoint.Publish(new BookingConfirmedEvent(
                 booking.Id, booking.ConsultantUserId, booking.StudentUserId,
                 new DateTimeOffset(booking.ScheduledStartUtc, TimeSpan.Zero)), ct);
+
+            await _sessionServices.SaveChangesAsync(ct);
+            await _bookingServices.SaveChangesAsync(ct);
         }
     }
 }

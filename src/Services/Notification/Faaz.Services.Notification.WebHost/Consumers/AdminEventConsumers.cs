@@ -97,6 +97,66 @@ public class UserDeactivatedByAdminConsumer(
     }
 }
 
+public class ReferenceRequestApprovedConsumer(
+    INotificationLogServices logServices,
+    IHubContext<NotificationHub> hub,
+    ILogger<ReferenceRequestApprovedConsumer> logger) : IConsumer<ReferenceRequestApprovedEvent>
+{
+    public async Task Consume(ConsumeContext<ReferenceRequestApprovedEvent> ctx)
+    {
+        var msg = ctx.Message;
+        var body = $"Good news — your request for \"{msg.ProposedName}\" was approved. Our team is finishing up " +
+                   "adding it to the catalog, so it may take a little while to appear in search.";
+
+        await hub.Clients.Group($"user-{msg.RequestedByUserId}").SendAsync(
+            "ReferenceRequestApproved", new { Type = "ReferenceRequestApproved", Message = body }, ctx.CancellationToken);
+
+        await logServices.AddAsync(new NotificationLog
+        {
+            UserId  = msg.RequestedByUserId,
+            Channel = NotificationChannel.InApp,
+            Type    = nameof(ReferenceRequestApprovedEvent),
+            Subject = $"Your \"{msg.ProposedName}\" request was approved",
+            Body    = body,
+            Status  = NotificationStatus.Sent,
+            SentAt  = DateTime.UtcNow,
+            Payload = JsonSerializer.Serialize(msg)
+        }, ctx.CancellationToken);
+        await logServices.SaveChangesAsync(ctx.CancellationToken);
+        logger.LogInformation("ReferenceRequestApproved notification sent to {Id}", msg.RequestedByUserId);
+    }
+}
+
+public class ReferenceRequestRejectedConsumer(
+    INotificationLogServices logServices,
+    IHubContext<NotificationHub> hub,
+    ILogger<ReferenceRequestRejectedConsumer> logger) : IConsumer<ReferenceRequestRejectedEvent>
+{
+    public async Task Consume(ConsumeContext<ReferenceRequestRejectedEvent> ctx)
+    {
+        var msg = ctx.Message;
+        var body = $"Your request for \"{msg.ProposedName}\" wasn't approved." +
+                   (string.IsNullOrWhiteSpace(msg.ReviewNotes) ? "" : $" Note from our team: {msg.ReviewNotes}");
+
+        await hub.Clients.Group($"user-{msg.RequestedByUserId}").SendAsync(
+            "ReferenceRequestRejected", new { Type = "ReferenceRequestRejected", Message = body }, ctx.CancellationToken);
+
+        await logServices.AddAsync(new NotificationLog
+        {
+            UserId  = msg.RequestedByUserId,
+            Channel = NotificationChannel.InApp,
+            Type    = nameof(ReferenceRequestRejectedEvent),
+            Subject = $"Your \"{msg.ProposedName}\" request wasn't approved",
+            Body    = body,
+            Status  = NotificationStatus.Sent,
+            SentAt  = DateTime.UtcNow,
+            Payload = JsonSerializer.Serialize(msg)
+        }, ctx.CancellationToken);
+        await logServices.SaveChangesAsync(ctx.CancellationToken);
+        logger.LogInformation("ReferenceRequestRejected notification sent to {Id}", msg.RequestedByUserId);
+    }
+}
+
 public class UserReactivatedByAdminConsumer(
     INotificationLogServices logServices,
     IHubContext<NotificationHub> hub,

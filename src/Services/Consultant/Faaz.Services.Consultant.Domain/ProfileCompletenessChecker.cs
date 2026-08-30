@@ -13,8 +13,8 @@ public static class ProfileCompletenessChecker
                         && !string.IsNullOrWhiteSpace(p.Institution);
 
         var expertise = p.StudyLevelsOffered.Length > 0
-                     && p.SubjectAreas.Length > 0
-                     && p.ServicesOffered.Length > 0;
+                     && p.Subjects.Any()
+                     && p.Services.Any();
 
         var bio = !string.IsNullOrWhiteSpace(p.WrittenBio);
 

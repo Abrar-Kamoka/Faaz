@@ -39,9 +39,18 @@ public record AdminApplicationDetail(
 
 public record PagedApplications(List<AdminApplicationDetail> Items, int TotalCount);
 
+// Field names must match the Consultant service's actual JSON exactly (case-insensitive matching
+// covers casing, but not name mismatches) — this previously used Bio/ProfilePhotoUrl, which match
+// nothing in the real response (WrittenBio/ProfessionalPhotoUrl), so both silently deserialized to
+// null and the admin UI never showed a photo or bio despite the data existing. See the identical
+// warning already on AdminApplicationDetail above.
 public record AdminProfileDetail(
-    Guid UserId, string FullLegalName, string? Bio, string? ProfilePhotoUrl,
-    string Email, int ApplicationStatus, bool IsActive, decimal HourlyRateGbp);
+    Guid UserId, string FullLegalName, string? WrittenBio, string? ProfessionalPhotoUrl,
+    string Email, int ApplicationStatus, bool IsActive, decimal HourlyRateGbp,
+    string? CurrentRole = null, string? Institution = null, int? YearsOfExperience = null,
+    Guid[]? SubjectIds = null, List<AdminSessionTypeDto>? SessionTypes = null);
+
+public record AdminSessionTypeDto(string Name, int DurationMinutes, decimal PriceGbp);
 
 public record PagedProfiles(List<AdminProfileDetail> Items, int TotalCount);
 

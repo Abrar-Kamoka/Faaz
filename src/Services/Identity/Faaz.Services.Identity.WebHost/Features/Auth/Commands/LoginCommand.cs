@@ -51,11 +51,25 @@ internal sealed class LoginCommandHandler : IRequestHandler<LoginCommand, AuthRe
     public async Task<AuthResponseDto> Handle(LoginCommand command, CancellationToken ct)
     {
         var user = await _userManager.FindByEmailAsync(command.PostModel.Email);
+
+        if (user is not null && await _userManager.IsLockedOutAsync(user))
+        {
+            _logger.LogWarning("Login blocked for {Email} — account locked out from repeated failures", command.PostModel.Email);
+            throw new ForbiddenException("account-locked", "Too many failed login attempts. Please try again in a few minutes.");
+        }
+
         if (user is null || !await _userManager.CheckPasswordAsync(user, command.PostModel.Password))
         {
+            // Tracks AccessFailedCount and applies Identity's configured lockout (5 attempts / 5 min
+            // by default) — CheckPasswordAsync alone never touches this, so without this call the
+            // Lockout* columns just sit unused and login has no brute-force protection at all.
+            if (user is not null)
+                await _userManager.AccessFailedAsync(user);
             _logger.LogWarning("Login failed for {Email}", command.PostModel.Email);
             throw new UnauthorizedAccessException("Invalid credentials.");
         }
+
+        await _userManager.ResetAccessFailedCountAsync(user);
 
         if (user.Status == UserStatus.Suspended)
             throw new ForbiddenException("account-suspended", "Your account has been suspended.");

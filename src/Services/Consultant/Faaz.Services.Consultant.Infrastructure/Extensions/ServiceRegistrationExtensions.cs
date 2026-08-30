@@ -1,8 +1,10 @@
 using Faaz.BuildingBlocks.Extensions;
 using Faaz.BuildingBlocks.Persistence;
 using Faaz.Services.Consultant.Infrastructure.DatabaseContext;
+using Faaz.Services.Consultant.Infrastructure.HttpClients;
 using Faaz.Services.Consultant.Infrastructure.Interfaces;
 using Faaz.Services.Consultant.Infrastructure.Managers;
+using Faaz.Services.Consultant.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -37,6 +39,30 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<IConsultantCredentialServices, ConsultantCredentialManager>();
 
         services.AddHttpContextAccessor();
+
+        services.AddHttpClient<IBookingReviewClient, BookingReviewClient>(client =>
+        {
+            client.BaseAddress = new Uri(config["Services:BookingServiceUrl"] ?? "https://localhost:55134");
+        }).ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            var handler = new HttpClientHandler();
+            if (env.IsDevelopment())
+                handler.ServerCertificateCustomValidationCallback =
+                    HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            return handler;
+        });
+
+        services.AddHttpClient<IAdministrationReferenceClient, AdministrationReferenceClient>(client =>
+        {
+            client.BaseAddress = new Uri(config["Services:AdministrationServiceUrl"] ?? "https://localhost:55136");
+        }).ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            var handler = new HttpClientHandler();
+            if (env.IsDevelopment())
+                handler.ServerCertificateCustomValidationCallback =
+                    HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            return handler;
+        });
 
         services.AddSwaggerGen(opts =>
         {

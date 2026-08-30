@@ -41,14 +41,17 @@ namespace Faaz.Services.Booking.WebHost.Consumers
                 Notes      = $"Payment authorized: {msg.StripePaymentIntentId} — awaiting consultant response"
             });
 
-            await _bookingServices.SaveChangesAsync();
-
             // The booking only becomes a genuine request the consultant should act on now that
             // payment is authorized — notifying any earlier (e.g. at initial SlotReserved creation)
             // would ping the consultant about bookings that were never actually paid for.
+            // Published BEFORE SaveChangesAsync: the EF outbox stages this on BookingDbContext's
+            // change tracker and only the SaveChangesAsync call below actually flushes it atomically
+            // with the status update — publishing after save would miss the outbox transaction.
             await _publishEndpoint.Publish(new BookingRequestReceivedEvent(
                 booking.Id, booking.ConsultantUserId, booking.StudentUserId,
                 new DateTimeOffset(booking.ScheduledStartUtc, TimeSpan.Zero)));
+
+            await _bookingServices.SaveChangesAsync();
         }
     }
 }

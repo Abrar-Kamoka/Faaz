@@ -230,15 +230,227 @@ namespace Faaz.Services.Administration.Infrastructure.Migrations
                     b.ToTable("PlatformConfigs", "admin");
                 });
 
-            modelBuilder.Entity("Faaz.Services.Administration.Domain.Entities.Subject", b =>
+            modelBuilder.Entity("Faaz.Services.Administration.Domain.Entities.Programme", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(0);
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnOrder(9000);
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(9002);
+
+                    b.Property<string>("DataSource")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnOrder(1010);
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnOrder(9006);
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(9005);
+
+                    b.Property<int?>("DurationMonths")
+                        .HasColumnType("int")
+                        .HasColumnOrder(1004);
+
+                    b.Property<string>("EntryRequirements")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnOrder(1006);
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnOrder(1009);
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnOrder(9004);
+
+                    b.Property<DateTime?>("LastVerifiedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnOrder(1012);
+
+                    b.Property<int>("Mode")
+                        .HasColumnType("int")
+                        .HasColumnOrder(1003);
+
+                    b.Property<string>("SourceUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnOrder(1011);
+
+                    b.Property<int>("SrNo")
+                        .HasColumnType("int")
+                        .HasColumnOrder(1);
+
+                    b.Property<int>("StudyLevel")
+                        .HasColumnType("int")
+                        .HasColumnOrder(1002);
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
+                        .HasColumnOrder(1001);
+
+                    b.Property<decimal?>("TuitionFeeDomesticGbp")
+                        .HasColumnType("decimal(10,2)")
+                        .HasColumnOrder(1007);
+
+                    b.Property<decimal?>("TuitionFeeInternationalGbp")
+                        .HasColumnType("decimal(10,2)")
+                        .HasColumnOrder(1008);
+
+                    b.Property<string>("UcasCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnOrder(1005);
+
+                    b.Property<Guid>("UniversityId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(1000);
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnOrder(9001);
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(9003);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Title")
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.HasIndex("UniversityId", "StudyLevel")
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("Programmes", "admin");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Administration.Domain.Entities.ProgrammeSubject", b =>
+                {
+                    b.Property<Guid>("ProgrammeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ProgrammeId", "SubjectId");
+
+                    b.HasIndex("SubjectId");
+
+                    b.ToTable("ProgrammeSubjects", "admin");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Administration.Domain.Entities.ReferenceDataRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(0);
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnOrder(9000);
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(9002);
+
+                    b.Property<Guid?>("CreatedEntityId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(1009);
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnOrder(9006);
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(9005);
+
+                    b.Property<string>("Details")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnOrder(1004);
+
+                    b.Property<int>("EntityType")
+                        .HasColumnType("int")
+                        .HasColumnOrder(1002);
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnOrder(9004);
+
+                    b.Property<string>("ProposedName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
+                        .HasColumnOrder(1003);
+
+                    b.Property<string>("RequestedByRole")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnOrder(1001);
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(1000);
+
+                    b.Property<string>("ReviewNotes")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnOrder(1007);
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnOrder(1008);
+
+                    b.Property<Guid?>("ReviewedByAdminUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(1006);
+
+                    b.Property<int>("SrNo")
+                        .HasColumnType("int")
+                        .HasColumnOrder(1);
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int")
+                        .HasColumnOrder(1005);
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnOrder(9001);
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(9003);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status")
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("ReferenceDataRequests", "admin");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Administration.Domain.Entities.Service", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnOrder(0);
 
                     b.Property<string>("Category")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnOrder(1001);
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnOrder(1002);
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2")
@@ -256,9 +468,13 @@ namespace Faaz.Services.Administration.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnOrder(9005);
 
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnOrder(1001);
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasColumnOrder(1002);
+                        .HasColumnOrder(1004);
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit")
@@ -269,6 +485,10 @@ namespace Faaz.Services.Administration.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)")
                         .HasColumnOrder(1000);
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int")
+                        .HasColumnOrder(1003);
 
                     b.Property<int>("SrNo")
                         .HasColumnType("int")
@@ -283,6 +503,88 @@ namespace Faaz.Services.Administration.Infrastructure.Migrations
                         .HasColumnOrder(9003);
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("Services", "admin");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Administration.Domain.Entities.Subject", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(0);
+
+                    b.Property<string>("Category")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnOrder(1002);
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnOrder(9000);
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(9002);
+
+                    b.Property<string>("DataSource")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnOrder(1004);
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnOrder(9006);
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(9005);
+
+                    b.Property<string>("HecosCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnOrder(1001);
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnOrder(1003);
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnOrder(9004);
+
+                    b.Property<DateTime?>("LastVerifiedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnOrder(1006);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnOrder(1000);
+
+                    b.Property<string>("SourceUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnOrder(1005);
+
+                    b.Property<int>("SrNo")
+                        .HasColumnType("int")
+                        .HasColumnOrder(1);
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnOrder(9001);
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(9003);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HecosCode")
+                        .HasFilter("[IsDeleted] = 0 AND [HecosCode] IS NOT NULL");
 
                     b.HasIndex("Name")
                         .HasFilter("[IsDeleted] = 0");
@@ -296,9 +598,14 @@ namespace Faaz.Services.Administration.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnOrder(0);
 
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnOrder(1004);
+
                     b.Property<string>("Country")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnOrder(1001);
+                        .HasColumnOrder(1002);
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2")
@@ -308,6 +615,11 @@ namespace Faaz.Services.Administration.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnOrder(9002);
 
+                    b.Property<string>("DataSource")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnOrder(1010);
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2")
                         .HasColumnOrder(9006);
@@ -316,17 +628,30 @@ namespace Faaz.Services.Administration.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnOrder(9005);
 
+                    b.Property<string>("InstitutionType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnOrder(1005);
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasColumnOrder(1003);
+                        .HasColumnOrder(1009);
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit")
                         .HasColumnOrder(9004);
 
+                    b.Property<bool>("IsRussellGroup")
+                        .HasColumnType("bit")
+                        .HasColumnOrder(1006);
+
+                    b.Property<DateTime?>("LastVerifiedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnOrder(1012);
+
                     b.Property<string>("LogoUrl")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnOrder(1002);
+                        .HasColumnOrder(1007);
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -334,9 +659,24 @@ namespace Faaz.Services.Administration.Infrastructure.Migrations
                         .HasColumnType("nvarchar(200)")
                         .HasColumnOrder(1000);
 
+                    b.Property<string>("Nation")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnOrder(1003);
+
+                    b.Property<string>("SourceUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnOrder(1011);
+
                     b.Property<int>("SrNo")
                         .HasColumnType("int")
                         .HasColumnOrder(1);
+
+                    b.Property<string>("Ukprn")
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)")
+                        .HasColumnOrder(1001);
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2")
@@ -346,12 +686,55 @@ namespace Faaz.Services.Administration.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnOrder(9003);
 
+                    b.Property<string>("WebsiteUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnOrder(1008);
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .HasFilter("[IsDeleted] = 0");
 
+                    b.HasIndex("Ukprn")
+                        .HasFilter("[IsDeleted] = 0 AND [Ukprn] IS NOT NULL");
+
                     b.ToTable("Universities", "admin");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Administration.Domain.Entities.Programme", b =>
+                {
+                    b.HasOne("Faaz.Services.Administration.Domain.Entities.University", "University")
+                        .WithMany()
+                        .HasForeignKey("UniversityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("University");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Administration.Domain.Entities.ProgrammeSubject", b =>
+                {
+                    b.HasOne("Faaz.Services.Administration.Domain.Entities.Programme", "Programme")
+                        .WithMany("ProgrammeSubjects")
+                        .HasForeignKey("ProgrammeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Faaz.Services.Administration.Domain.Entities.Subject", "Subject")
+                        .WithMany()
+                        .HasForeignKey("SubjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Programme");
+
+                    b.Navigation("Subject");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Administration.Domain.Entities.Programme", b =>
+                {
+                    b.Navigation("ProgrammeSubjects");
                 });
 #pragma warning restore 612, 618
         }

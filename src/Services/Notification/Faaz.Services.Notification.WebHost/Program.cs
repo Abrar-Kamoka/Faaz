@@ -139,6 +139,8 @@ try
         x.AddConsumer<ConsultantRestoredByAdminConsumer>();
         x.AddConsumer<UserDeactivatedByAdminConsumer>();
         x.AddConsumer<UserReactivatedByAdminConsumer>();
+        x.AddConsumer<ReferenceRequestApprovedConsumer>();
+        x.AddConsumer<ReferenceRequestRejectedConsumer>();
         // Phase 5
         x.AddConsumer<StudentOnboardingCompletedNotificationConsumer>();
         x.AddConsumer<ConsultantProfileActivatedNotificationConsumer>();
@@ -164,6 +166,7 @@ try
         Log.Warning(ex, "DB migration skipped — run migrations manually before using data endpoints");
     }
 
+    app.UseFaazMiddleware();
     app.UseSerilogRequestLogging();
     app.UseAuthentication();
     app.UseAuthorization();

@@ -8,12 +8,12 @@ public class UpdateExpertiseCommandValidator : AbstractValidator<UpdateExpertise
     public UpdateExpertiseCommandValidator()
     {
         RuleFor(x => x.PutModel.StudyLevelsOffered).NotEmpty().WithMessage("At least one study level is required.");
-        RuleFor(x => x.PutModel.ServicesOffered).NotEmpty().WithMessage("At least one service type is required.");
-        RuleFor(x => x.PutModel.SubjectAreas).NotEmpty().WithMessage("At least one subject area is required.");
+        RuleFor(x => x.PutModel.ServiceIds).NotEmpty().WithMessage("At least one service is required.");
+        RuleFor(x => x.PutModel.SubjectIds).NotEmpty().WithMessage("At least one subject is required.");
 
         RuleForEach(x => x.PutModel.StudyLevelsOffered).IsInEnum().WithMessage("Invalid StudyLevel value.");
-        RuleForEach(x => x.PutModel.ServicesOffered).IsInEnum().WithMessage("Invalid ServiceType value.");
-        RuleForEach(x => x.PutModel.SubjectAreas).NotEmpty().MaximumLength(100);
-        RuleForEach(x => x.PutModel.SpecialisedUniversities).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.PutModel.SubjectIds).Must(ids => ids.Length <= 20).WithMessage("At most 20 subjects.");
+        RuleFor(x => x.PutModel.UniversityIds).Must(ids => ids.Length <= 20).WithMessage("At most 20 universities.");
+        RuleFor(x => x.PutModel.ServiceIds).Must(ids => ids.Length <= 20).WithMessage("At most 20 services.");
     }
 }

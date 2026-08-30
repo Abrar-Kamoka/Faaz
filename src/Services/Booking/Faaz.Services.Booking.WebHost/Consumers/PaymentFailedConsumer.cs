@@ -44,14 +44,16 @@ namespace Faaz.Services.Booking.WebHost.Consumers
                 Notes      = $"Payment failed: {msg.FailureMessage}"
             });
 
-            await _bookingServices.SaveChangesAsync();
-
             // Reuse the same notification path every other cancellation uses so both sides actually find
             // out — this matters most for the post-accept capture-failure case, where the consultant
             // otherwise has no way to learn a session they accepted just silently stopped existing.
+            // Published before SaveChangesAsync so the EF outbox captures it atomically (see
+            // AddFaazRabbitMqWithOutbox in MassTransitExtensions.cs).
             await _publishEndpoint.Publish(new BookingCancelledEvent(
                 booking.Id, booking.ConsultantUserId, booking.StudentUserId, "system-payment-failed",
                 msg.FailureMessage, RefundRequired: false, RefundAmount: 0m));
+
+            await _bookingServices.SaveChangesAsync();
         }
     }
 }

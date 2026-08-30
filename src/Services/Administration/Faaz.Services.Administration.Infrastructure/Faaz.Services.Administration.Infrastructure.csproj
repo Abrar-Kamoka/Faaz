@@ -10,6 +10,8 @@
     <ProjectReference Include="..\..\..\Shared\Faaz.BuildingBlocks\Faaz.BuildingBlocks.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="ClosedXML" />
+    <PackageReference Include="CsvHelper" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
       <PrivateAssets>all</PrivateAssets>
@@ -24,5 +26,11 @@
     <PackageReference Include="Microsoft.Extensions.Http.Polly" />
     <PackageReference Include="Scrutor" />
     <PackageReference Include="RT.Comb" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Real HESA Discover Uni source data (CC BY 4.0), bundled with the app so the initial
+         reference-catalog seed can run wherever this service deploys — including a fresh DB
+         after a reset — without depending on anything outside the repo. See DiscoverUniSeeder. -->
+    <None Include="SeedData\DiscoverUni\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -27,9 +27,12 @@ namespace Faaz.Services.Booking.WebHost.Features.Sessions.Commands
         private readonly ISessionParticipantServices _participantServices;
         private readonly IVideoService _videoService;
         private readonly IConfiguration _config;
+        private readonly IBookingIdentityClient _identityClient;
 
-        public JoinSessionCommandHandler(IBookingServices b, ISessionServices s, ISessionParticipantServices p, IVideoService v, IConfiguration c)
-        { _bookingServices = b; _sessionServices = s; _participantServices = p; _videoService = v; _config = c; }
+        public JoinSessionCommandHandler(
+            IBookingServices b, ISessionServices s, ISessionParticipantServices p, IVideoService v,
+            IConfiguration c, IBookingIdentityClient identityClient)
+        { _bookingServices = b; _sessionServices = s; _participantServices = p; _videoService = v; _config = c; _identityClient = identityClient; }
 
         public async Task<JoinSessionResultDto> Handle(JoinSessionCommand command, CancellationToken ct)
         {
@@ -83,8 +86,15 @@ namespace Faaz.Services.Booking.WebHost.Features.Sessions.Commands
 
             var identity   = isStudent ? $"student-{command.RequestingUserId:N}" : $"consultant-{command.RequestingUserId:N}";
             var ttlSeconds = (int)(windowEnd - now).TotalSeconds + 300;
+
+            // The JWT carries no display name (sub/userId/email/role only — see TokenService), so
+            // the caller-supplied DisplayName is never anything but a "Participant" fallback string.
+            // Look up the real name from Identity instead; keep the fallback only if that lookup fails.
+            var nameResult = await _identityClient.GetUserNameAsync(command.RequestingUserId, ct);
+            var displayName = nameResult?.FullName ?? command.DisplayName;
+
             var token      = await _videoService.GenerateParticipantTokenAsync(
-                session.LiveKitRoomName, identity, command.DisplayName, canPublish: true, ttlSeconds, ct);
+                session.LiveKitRoomName, identity, displayName, canPublish: true, ttlSeconds, ct);
 
             return new JoinSessionResultDto
             {

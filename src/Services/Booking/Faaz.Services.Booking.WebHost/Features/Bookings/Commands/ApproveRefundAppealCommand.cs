@@ -37,11 +37,12 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
             appeal.ReviewedAt        = DateTime.UtcNow;
             appeal.AdminNotes        = command.AdminNotes;
 
-            await _appealServices.SaveChangesAsync(ct);
-
+            // Published before SaveChangesAsync so the EF outbox captures it atomically.
             await _publishEndpoint.Publish(new RefundAppealApprovedEvent(
                 appeal.BookingId, appeal.Id, appeal.StudentUserId,
                 appeal.RequestedAmountGbp, command.AdminUserId), ct);
+
+            await _appealServices.SaveChangesAsync(ct);
         }
     }
 }

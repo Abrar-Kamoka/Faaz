@@ -1,3 +1,4 @@
+using Faaz.Services.Consultant.Domain.Entities;
 using Faaz.Services.Consultant.Infrastructure.Interfaces;
 using Faaz.SharedKernel.Abstractions;
 using Faaz.SharedKernel.Results;
@@ -24,6 +25,17 @@ public class InternalAdminConsultantsController : ConsultantInternalController
         _appServices     = appServices;
         _profileServices = profileServices;
         _fileStorage     = fileStorage;
+    }
+
+    // Faaz has no single "hourly rate" concept — consultants price per session type (e.g. a 30-min
+    // Discovery Call at a flat fee), not by the hour. This normalizes their active session types to
+    // a £/hour equivalent so the admin list has a single comparable figure, rather than the literal
+    // 0m stub this used to return regardless of what the consultant actually charges.
+    private static decimal ComputeHourlyRateGbp(IEnumerable<ConsultantSessionType> sessionTypes)
+    {
+        var active = sessionTypes.Where(s => s.IsActive && s.DurationMinutes > 0).ToList();
+        if (active.Count == 0) return 0m;
+        return Math.Round(active.Average(s => s.PriceGbp / s.DurationMinutes * 60m), 2);
     }
 
     // ── Applications ─────────────────────────────────────────────────────────
@@ -176,7 +188,7 @@ public class InternalAdminConsultantsController : ConsultantInternalController
                 Email             = p.Application?.Email,
                 ApplicationStatus = p.Application is not null ? (int)p.Application.ApplicationStatus : 0,
                 p.IsActive,
-                HourlyRateGbp     = p.SessionTypes.Any() ? 0m : 0m
+                HourlyRateGbp     = ComputeHourlyRateGbp(p.SessionTypes)
             }),
             TotalCount = total
         }));
@@ -199,7 +211,15 @@ public class InternalAdminConsultantsController : ConsultantInternalController
             Email             = p.Application?.Email,
             ApplicationStatus = p.Application is not null ? (int)p.Application.ApplicationStatus : 0,
             p.IsActive,
-            HourlyRateGbp     = 0m
+            HourlyRateGbp     = ComputeHourlyRateGbp(p.SessionTypes),
+            p.CurrentRole,
+            p.Institution,
+            p.YearsOfExperience,
+            SubjectIds = p.Subjects.Select(s => s.SubjectId),
+            SessionTypes = p.SessionTypes
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.SortOrder)
+                .Select(s => new { s.Name, s.DurationMinutes, s.PriceGbp })
         }));
     }
 

@@ -32,3 +32,14 @@ public record StaffRoleChangedEvent(
 public record RolePermissionsChangedEvent(
     Guid RoleId,
     Guid ChangedByAdminId);
+
+public record ReferenceRequestApprovedEvent(
+    Guid RequestedByUserId,
+    string EntityTypeName,
+    string ProposedName);
+
+public record ReferenceRequestRejectedEvent(
+    Guid RequestedByUserId,
+    string EntityTypeName,
+    string ProposedName,
+    string? ReviewNotes);

@@ -63,6 +63,8 @@ try
         var db = scope.ServiceProvider.GetRequiredService<AdminDbContext>();
         db.Database.Migrate();
         await Faaz.Services.Administration.Infrastructure.DatabaseContext.PlatformConfigSeeder.SeedAsync(app.Services);
+        await Faaz.Services.Administration.Infrastructure.DatabaseContext.ServiceSeeder.SeedAsync(app.Services);
+        await Faaz.Services.Administration.Infrastructure.SeedData.DiscoverUniSeeder.SeedAsync(app.Services);
     }
     catch (Exception ex)
     {

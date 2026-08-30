@@ -21,5 +21,11 @@ internal sealed class SubjectConfiguration : IEntityTypeConfiguration<Subject>
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
 
         builder.HasIndex(x => x.Name).HasFilter("[IsDeleted] = 0");
+
+        builder.Property(x => x.HecosCode).HasMaxLength(20);
+        builder.Property(x => x.DataSource).HasMaxLength(200);
+        builder.Property(x => x.SourceUrl).HasMaxLength(500);
+
+        builder.HasIndex(x => x.HecosCode).HasFilter("[IsDeleted] = 0 AND [HecosCode] IS NOT NULL");
     }
 }

@@ -16,19 +16,29 @@ internal sealed class ConsultantProfileManager : IConsultantProfileServices
         _db = db;
     }
 
-    // Lean — no child collections. For scalar-only writes.
+    // "Lean" — skips SessionTypes/AvailabilitySlots, but still includes Subjects/Services: those
+    // used to be plain array columns (always loaded, no Include needed) that ProfileCompletenessChecker
+    // reads for HasExpertise; now that they're join-table collections, TryAutoActivateAsync (called
+    // from every profile-section command, including the scalar-only ones that use this fetch) would
+    // silently see them as always-empty without this.
     public Task<ConsultantProfile?> GetByUserIdAsync(Guid userId, CancellationToken ct)
     {
         return _db.ConsultantProfiles
+            .Include(p => p.Subjects)
+            .Include(p => p.Services)
             .FirstOrDefaultAsync(p => p.UserId == userId, ct);
     }
 
-    // Full — includes SessionTypes + AvailabilitySlots. AsNoTracking for reads; tracking for writes.
+    // Full — includes SessionTypes + AvailabilitySlots + the expertise catalog references
+    // (Services/Subjects/Universities). AsNoTracking for reads; tracking for writes.
     public Task<ConsultantProfile?> GetByUserIdWithCollectionsAsync(Guid userId, CancellationToken ct)
     {
         return _db.ConsultantProfiles
             .Include(p => p.SessionTypes)
             .Include(p => p.AvailabilitySlots)
+            .Include(p => p.Services)
+            .Include(p => p.Subjects)
+            .Include(p => p.Universities)
             .FirstOrDefaultAsync(p => p.UserId == userId, ct);
     }
 
@@ -37,6 +47,9 @@ internal sealed class ConsultantProfileManager : IConsultantProfileServices
         return _db.ConsultantProfiles
             .Include(p => p.SessionTypes)
             .Include(p => p.AvailabilitySlots)
+            .Include(p => p.Services)
+            .Include(p => p.Subjects)
+            .Include(p => p.Universities)
             .FirstOrDefaultAsync(p => p.Id == profileId, ct);
     }
 
@@ -55,6 +68,8 @@ internal sealed class ConsultantProfileManager : IConsultantProfileServices
         return _db.ConsultantProfiles
             .Include(p => p.SessionTypes)
             .Include(p => p.AvailabilitySlots)
+            .Include(p => p.Services)
+            .Include(p => p.Subjects)
             .FirstOrDefaultAsync(p => p.StripeAccountId == stripeAccountId, ct);
     }
 
@@ -79,45 +94,48 @@ internal sealed class ConsultantProfileManager : IConsultantProfileServices
     }
 
     public async Task<(IReadOnlyList<ConsultantProfile> Items, int Total)> GetAllActiveAsync(
-        string? subjectFilter, string? search, int? sessionType, int? studyLevel, bool? verifiedOnly,
+        Guid? subjectId, string? search, Guid? serviceId, StudyLevel? studyLevel, bool? verifiedOnly,
         int page, int pageSize, CancellationToken ct)
     {
         var query = _db.ConsultantProfiles
             .Include(p => p.SessionTypes.Where(s => !s.IsDeleted && s.IsActive))
             .Include(p => p.AvailabilitySlots.Where(s => !s.IsDeleted && !s.IsBlockedDate))
+            .Include(p => p.Subjects)
             .Where(p => p.IsActive && !p.IsDeleted)
             .AsNoTracking();
 
-        var all = await query.OrderBy(p => p.DisplayName).ToListAsync(ct);
-
-        if (!string.IsNullOrWhiteSpace(subjectFilter))
-        {
-            var f = subjectFilter.Trim().ToLowerInvariant();
-            all = all.Where(p => (p.SubjectAreas ?? []).Any(s => s.ToLowerInvariant().Contains(f))).ToList();
-        }
+        // Real EF-translatable filters (SQL EXISTS/IN) — the old version materialized the entire
+        // active-consultant table into memory before filtering, because SubjectAreas/ServicesOffered
+        // were JSON-blob columns LINQ-to-SQL can't see inside. Now that they're join tables, the
+        // filter runs in the database.
+        if (subjectId.HasValue)
+            query = query.Where(p => p.Subjects.Any(s => s.SubjectId == subjectId.Value));
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var term = search.Trim().ToLowerInvariant();
-            all = all.Where(p =>
-                p.DisplayName.ToLowerInvariant().Contains(term) ||
-                p.CurrentRole.ToLowerInvariant().Contains(term) ||
-                p.Institution.ToLowerInvariant().Contains(term) ||
-                (p.SubjectAreas ?? []).Any(s => s.ToLowerInvariant().Contains(term))
-            ).ToList();
+            // Subject names aren't local anymore (they live in Administration's catalog) — matching
+            // by subject text would need a cross-service lookup, so free-text search now covers only
+            // the consultant's own fields; use subjectId for an exact subject filter.
+            var term = search.Trim();
+            query = query.Where(p =>
+                p.DisplayName.Contains(term) ||
+                p.CurrentRole.Contains(term) ||
+                p.Institution.Contains(term));
         }
 
-        if (sessionType.HasValue)
-            all = all.Where(p => (p.ServicesOffered ?? []).Contains(sessionType.Value)).ToList();
+        if (serviceId.HasValue)
+            query = query.Where(p => p.Services.Any(s => s.ServiceId == serviceId.Value));
 
         if (studyLevel.HasValue)
-            all = all.Where(p => (p.StudyLevelsOffered ?? []).Contains(studyLevel.Value)).ToList();
+            query = query.Where(p => p.StudyLevelsOffered.Contains(studyLevel.Value));
 
         if (verifiedOnly == true)
-            all = all.Where(p => p.IsFeatured).ToList();
+            query = query.Where(p => p.IsFeatured);
 
-        var total = all.Count;
-        var items = all.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var total = await query.CountAsync(ct);
+        var items = await query.OrderBy(p => p.DisplayName)
+                                .Skip((page - 1) * pageSize).Take(pageSize)
+                                .ToListAsync(ct);
         return (items, total);
     }
 
@@ -132,6 +150,7 @@ internal sealed class ConsultantProfileManager : IConsultantProfileServices
         var query = _db.ConsultantProfiles
             .IgnoreQueryFilters()
             .Include(p => p.Application)
+            .Include(p => p.SessionTypes)
             .AsNoTracking();
 
         var total = await query.CountAsync(ct);
@@ -146,6 +165,8 @@ internal sealed class ConsultantProfileManager : IConsultantProfileServices
     public Task<ConsultantProfile?> GetByUserIdWithApplicationAsync(Guid userId, CancellationToken ct)
         => _db.ConsultantProfiles
               .Include(p => p.Application)
+              .Include(p => p.SessionTypes)
+              .Include(p => p.Subjects)
               .FirstOrDefaultAsync(p => p.UserId == userId, ct);
 
     public async Task<(IReadOnlyList<ConsultantProfile> Items, int Total)> GetFeaturedAsync(
@@ -154,6 +175,7 @@ internal sealed class ConsultantProfileManager : IConsultantProfileServices
         var query = _db.ConsultantProfiles
             .IgnoreQueryFilters()
             .Include(p => p.Application)
+            .Include(p => p.SessionTypes)
             .Where(p => p.IsFeatured && !p.IsDeleted)
             .AsNoTracking();
 

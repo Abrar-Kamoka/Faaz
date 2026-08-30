@@ -132,6 +132,11 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
             if (payment is null) { _logger.LogWarning("No payment found for intent {Id}", intent.Id); return; }
 
             await _publishEndpoint.Publish(new PaymentAuthorizedEvent(payment.BookingId, intent.Id, payment.StudentUserId, payment.Amount), ct);
+
+            // No payment mutation here, but the EF outbox only flushes a published message on a
+            // SaveChangesAsync call against the same DbContext — without this, the message above
+            // would stay buffered in memory and never reach the broker.
+            await _paymentServices.SaveChangesAsync(ct);
         }
 
         private async Task HandlePaymentIntentSucceededAsync(PaymentIntent intent, CancellationToken ct)
@@ -141,9 +146,11 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
 
             payment.Status         = PaymentStatus.Captured;
             payment.StripeChargeId = intent.LatestChargeId;
-            await _paymentServices.SaveChangesAsync(ct);
 
+            // Published before SaveChangesAsync so the EF outbox captures it atomically.
             await _publishEndpoint.Publish(new PaymentCapturedEvent(payment.BookingId, intent.Id, payment.Amount), ct);
+
+            await _paymentServices.SaveChangesAsync(ct);
         }
 
         private async Task HandlePaymentIntentFailedAsync(PaymentIntent intent, CancellationToken ct)
@@ -153,9 +160,11 @@ namespace Faaz.Services.Payment.WebHost.Features.Payments.Commands
 
             payment.Status         = PaymentStatus.Failed;
             payment.FailureMessage = intent.LastPaymentError?.Message;
-            await _paymentServices.SaveChangesAsync(ct);
 
+            // Published before SaveChangesAsync so the EF outbox captures it atomically.
             await _publishEndpoint.Publish(new PaymentFailedEvent(payment.BookingId, intent.Id, payment.FailureMessage ?? ""), ct);
+
+            await _paymentServices.SaveChangesAsync(ct);
         }
 
         private async Task HandleChargeRefundedAsync(Charge charge, CancellationToken ct)

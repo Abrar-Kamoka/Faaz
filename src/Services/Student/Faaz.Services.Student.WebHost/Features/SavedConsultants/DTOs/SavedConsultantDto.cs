@@ -19,7 +19,7 @@ public class SavedConsultantDto
     public bool IsVerified { get; set; }
     public decimal AverageRating { get; set; }
     public int ReviewCount { get; set; }
-    public string[] SubjectAreas { get; set; } = [];
+    public Guid[] SubjectIds { get; set; } = [];
     public List<SessionTypeSummaryDto> SessionTypes { get; set; } = [];
     public bool IsAvailableThisWeek { get; set; }
 }

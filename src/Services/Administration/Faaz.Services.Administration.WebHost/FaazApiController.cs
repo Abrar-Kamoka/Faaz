@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System.Security.Claims;
 
 namespace Faaz.Services.Administration.WebHost;
@@ -25,4 +26,23 @@ public abstract class FaazApiController : ControllerBase
         HasPermission(permissionKey)
             ? null
             : StatusCode(403, Faaz.SharedKernel.Results.ApiResponse.Fail(403, $"Missing required permission: {permissionKey}"));
+}
+
+/// <summary>Base for internal (X-Service-Key) endpoints in the Administration service — mirrors
+/// Faaz.Services.Consultant.WebHost's ConsultantInternalController.</summary>
+public abstract class AdminInternalController : FaazApiController
+{
+    private readonly IConfiguration _config;
+
+    protected AdminInternalController(IConfiguration config)
+    {
+        _config = config;
+    }
+
+    protected bool IsInternalRequest()
+    {
+        var key      = HttpContext.Request.Headers["X-Service-Key"].FirstOrDefault();
+        var expected = _config["ServiceApiKey"];
+        return !string.IsNullOrWhiteSpace(key) && key == expected;
+    }
 }

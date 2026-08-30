@@ -28,7 +28,7 @@ internal sealed class GetProfileCompletenessQueryHandler : IRequestHandler<GetPr
         {
             ["Personal"] = !string.IsNullOrWhiteSpace(p.FirstName) && !string.IsNullOrWhiteSpace(p.FirstLanguage),
             ["StudyLevel"] = p.StudyTrack.HasValue,
-            ["Goals"] = p.TargetStudyLevel.HasValue && p.HelpTypes != 0,
+            ["Goals"] = p.TargetStudyLevel.HasValue && p.HelpServices.Any(),
             ["Bio"] = !string.IsNullOrWhiteSpace(p.Bio)
         };
 

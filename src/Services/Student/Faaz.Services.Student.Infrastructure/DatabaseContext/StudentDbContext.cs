@@ -25,6 +25,10 @@ public class StudentDbContext : DbContext
     public DbSet<UndergraduateData> UndergraduateData => Set<UndergraduateData>();
     public DbSet<PostgraduateData> PostgraduateData => Set<PostgraduateData>();
     public DbSet<SavedConsultant> SavedConsultants => Set<SavedConsultant>();
+    public DbSet<StudentProfileHelpService> StudentProfileHelpServices => Set<StudentProfileHelpService>();
+    public DbSet<StudentProfileTargetUniversity> StudentProfileTargetUniversities => Set<StudentProfileTargetUniversity>();
+    public DbSet<StudentProfileTargetSubject> StudentProfileTargetSubjects => Set<StudentProfileTargetSubject>();
+    public DbSet<StudentProfileTargetProgramme> StudentProfileTargetProgrammes => Set<StudentProfileTargetProgramme>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -54,7 +58,6 @@ public class StudentDbContext : DbContext
             nameof(StudentProfile.LastName), nameof(StudentProfile.DateOfBirth), nameof(StudentProfile.CountryOfCitizenship),
             nameof(StudentProfile.CountryOfResidence), nameof(StudentProfile.Ethnicity), nameof(StudentProfile.FirstLanguage),
             nameof(StudentProfile.AdditionalLanguages), nameof(StudentProfile.StudyTrack), nameof(StudentProfile.TargetStudyLevel),
-            nameof(StudentProfile.TargetSubjects), nameof(StudentProfile.TargetUniversities), nameof(StudentProfile.HelpTypes),
             nameof(StudentProfile.ProfilePhotoUrl), nameof(StudentProfile.Bio), nameof(StudentProfile.ProfileCompleteness),
             nameof(StudentProfile.IsOnboardingComplete));
 

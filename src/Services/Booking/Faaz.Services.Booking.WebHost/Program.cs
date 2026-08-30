@@ -25,7 +25,7 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddFaazOpenTelemetry(builder.Configuration, "faaz-booking");
     builder.Services.AddBookingInfrastructure(builder.Configuration, typeof(Program).Assembly, builder.Environment);
-    builder.Services.AddFaazRabbitMq(builder.Configuration, builder.Environment, x =>
+    builder.Services.AddFaazRabbitMqWithOutbox<BookingDbContext>(builder.Configuration, builder.Environment, x =>
     {
         x.AddConsumer<PaymentAuthorizedConsumer>();
         x.AddConsumer<PaymentCapturedConsumer>();
@@ -60,10 +60,11 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
 
-    app.UseHangfireDashboard("/hangfire", new DashboardOptions
-    {
-        Authorization = []
-    });
+    // No explicit Authorization filter — Hangfire's own default (LocalRequestsOnlyAuthorizationFilter)
+    // applies, restricting the dashboard to loopback requests only. This dashboard exposes and can
+    // trigger jobs that touch payouts and refunds, so it must never be open to arbitrary callers —
+    // remote access for ops should go through an SSH tunnel/VPN to loopback, not a public route.
+    app.UseHangfireDashboard("/hangfire");
 
     RecurringJob.AddOrUpdate<IExpireUnconfirmedBookingsJob>(
         "expire-unconfirmed-bookings",

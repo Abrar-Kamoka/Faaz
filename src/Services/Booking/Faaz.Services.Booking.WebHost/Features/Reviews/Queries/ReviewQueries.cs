@@ -1,4 +1,5 @@
 using Faaz.Services.Booking.Infrastructure.Interfaces;
+using Faaz.Services.Booking.Infrastructure.Services;
 using Faaz.Services.Booking.WebHost.Features.Reviews.DTOs;
 using MediatR;
 
@@ -14,15 +15,25 @@ namespace Faaz.Services.Booking.WebHost.Features.Reviews.Queries
     public class GetConsultantReviewsQueryHandler : IRequestHandler<GetConsultantReviewsQuery, (IReadOnlyList<ReviewDto> Items, int TotalCount)>
     {
         private readonly IReviewServices _reviewServices;
+        private readonly IBookingIdentityClient _identityClient;
 
-        public GetConsultantReviewsQueryHandler(IReviewServices r) { _reviewServices = r; }
+        public GetConsultantReviewsQueryHandler(IReviewServices r, IBookingIdentityClient identityClient)
+        { _reviewServices = r; _identityClient = identityClient; }
 
         public async Task<(IReadOnlyList<ReviewDto> Items, int TotalCount)> Handle(GetConsultantReviewsQuery query, CancellationToken ct)
         {
             var (items, total) = await _reviewServices.GetByConsultantProfileIdAsync(query.ConsultantProfileId, query.Page, query.PageSize, ct);
+            var publicItems = items.Where(r => r.IsPublic).ToList();
 
-            var dtos = items
-                .Where(r => r.IsPublic)
+            // Reviews don't own user profile data — best-effort enrichment from Identity, one lookup
+            // per distinct student rather than per review; a lookup failure just leaves the name blank.
+            var distinctStudentIds = publicItems.Select(r => r.StudentUserId).Distinct().ToList();
+            var lookups = await Task.WhenAll(distinctStudentIds.Select(id => _identityClient.GetUserNameAsync(id, ct)));
+            var namesByStudentId = new Dictionary<Guid, string>();
+            for (var i = 0; i < distinctStudentIds.Count; i++)
+                if (lookups[i] is { } name) namesByStudentId[distinctStudentIds[i]] = name.FullName;
+
+            var dtos = publicItems
                 .Select(r => new ReviewDto
                 {
                     Id                  = r.Id,
@@ -32,7 +43,8 @@ namespace Faaz.Services.Booking.WebHost.Features.Reviews.Queries
                     Rating              = (int)r.Rating,
                     ReviewText          = r.ReviewText,
                     IsPublic            = r.IsPublic,
-                    CreatedAt           = r.CreatedAt
+                    CreatedAt           = r.CreatedAt,
+                    StudentName         = namesByStudentId.GetValueOrDefault(r.StudentUserId)
                 }).ToList();
 
             return (dtos, total);
@@ -48,12 +60,25 @@ namespace Faaz.Services.Booking.WebHost.Features.Reviews.Queries
     public class GetAllReviewsAdminQueryHandler : IRequestHandler<GetAllReviewsAdminQuery, (IReadOnlyList<AdminReviewDto> Items, int TotalCount)>
     {
         private readonly IReviewServices _reviewServices;
+        private readonly IBookingIdentityClient _identityClient;
 
-        public GetAllReviewsAdminQueryHandler(IReviewServices r) { _reviewServices = r; }
+        public GetAllReviewsAdminQueryHandler(IReviewServices r, IBookingIdentityClient identityClient)
+        { _reviewServices = r; _identityClient = identityClient; }
 
         public async Task<(IReadOnlyList<AdminReviewDto> Items, int TotalCount)> Handle(GetAllReviewsAdminQuery query, CancellationToken ct)
         {
             var (items, total) = await _reviewServices.GetAllForAdminAsync(query.Page, query.PageSize, ct);
+
+            // Reviews don't own user profile data — best-effort enrichment from Identity, one lookup
+            // per distinct user (student or consultant) rather than per review.
+            var distinctUserIds = items.Select(r => r.StudentUserId)
+                .Concat(items.Select(r => r.Booking.ConsultantUserId))
+                .Distinct().ToList();
+            var lookups = await Task.WhenAll(distinctUserIds.Select(id => _identityClient.GetUserNameAsync(id, ct)));
+            var namesByUserId = new Dictionary<Guid, string>();
+            for (var i = 0; i < distinctUserIds.Count; i++)
+                if (lookups[i] is { } name) namesByUserId[distinctUserIds[i]] = name.FullName;
+
             var dtos = items.Select(r => new AdminReviewDto
             {
                 Id                  = r.Id,
@@ -64,7 +89,9 @@ namespace Faaz.Services.Booking.WebHost.Features.Reviews.Queries
                 ReviewText          = r.ReviewText,
                 IsPublic            = r.IsPublic,
                 IsDeleted           = r.IsDeleted,
-                CreatedAt           = r.CreatedAt
+                CreatedAt           = r.CreatedAt,
+                StudentName         = namesByUserId.GetValueOrDefault(r.StudentUserId),
+                ConsultantName      = namesByUserId.GetValueOrDefault(r.Booking.ConsultantUserId)
             }).ToList();
             return (dtos, total);
         }

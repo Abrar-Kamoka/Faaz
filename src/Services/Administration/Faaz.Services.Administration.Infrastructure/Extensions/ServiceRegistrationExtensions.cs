@@ -1,5 +1,7 @@
 using Faaz.BuildingBlocks.Persistence;
 using Faaz.Services.Administration.Infrastructure.DatabaseContext;
+using Faaz.Services.Administration.Infrastructure.ExcelImport;
+using Faaz.Services.Administration.Infrastructure.ExcelImport.Descriptors;
 using Faaz.Services.Administration.Infrastructure.HttpClients;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -31,6 +33,12 @@ public static class ServiceRegistrationExtensions
             .AddClasses(c => c.InNamespaces("Faaz.Services.Administration.Infrastructure.Managers"))
             .AsImplementedInterfaces()
             .WithScopedLifetime());
+
+        services.AddScoped<IReferenceImportDescriptor, UniversityImportDescriptor>();
+        services.AddScoped<IReferenceImportDescriptor, SubjectImportDescriptor>();
+        services.AddScoped<IReferenceImportDescriptor, ProgrammeImportDescriptor>();
+        services.AddScoped<IReferenceImportDescriptor, ServiceImportDescriptor>();
+        services.AddScoped<IExcelImportExportService, ExcelImportExportService>();
 
         var isDev = env.IsDevelopment();
 

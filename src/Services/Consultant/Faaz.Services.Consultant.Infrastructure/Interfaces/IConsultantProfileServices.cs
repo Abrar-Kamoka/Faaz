@@ -1,4 +1,5 @@
 using Faaz.Services.Consultant.Domain.Entities;
+using static Faaz.SharedKernel.SharedEnums;
 
 namespace Faaz.Services.Consultant.Infrastructure.Interfaces;
 
@@ -15,7 +16,7 @@ public interface IConsultantProfileServices
 
     // List all active profiles for student browsing.
     Task<(IReadOnlyList<ConsultantProfile> Items, int Total)> GetAllActiveAsync(
-        string? subjectFilter, string? search, int? sessionType, int? studyLevel, bool? verifiedOnly,
+        Guid? subjectId, string? search, Guid? serviceId, StudyLevel? studyLevel, bool? verifiedOnly,
         int page, int pageSize, CancellationToken ct = default);
 
     Task<ConsultantProfile?> GetByApplicationIdAsync(Guid applicationId, CancellationToken ct = default);

@@ -12,7 +12,7 @@ public record SavedConsultantSummary(
     bool IsVerified,
     decimal AverageRating,
     int ReviewCount,
-    string[] SubjectAreas,
+    Guid[] SubjectIds,
     SavedConsultantSessionType[] SessionTypes,
     bool IsAvailableThisWeek);
 

@@ -230,7 +230,7 @@ namespace Faaz.Services.Student.Infrastructure.Migrations
 
                     b.Property<string>("Bio")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnOrder(1016);
+                        .HasColumnOrder(1013);
 
                     b.Property<string>("CountryOfCitizenship")
                         .HasColumnType("nvarchar(max)")
@@ -278,17 +278,13 @@ namespace Faaz.Services.Student.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnOrder(1002);
 
-                    b.Property<int>("HelpTypes")
-                        .HasColumnType("int")
-                        .HasColumnOrder(1014);
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit")
                         .HasColumnOrder(9004);
 
                     b.Property<bool>("IsOnboardingComplete")
                         .HasColumnType("bit")
-                        .HasColumnOrder(1018);
+                        .HasColumnOrder(1015);
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -297,11 +293,11 @@ namespace Faaz.Services.Student.Infrastructure.Migrations
 
                     b.Property<int>("ProfileCompleteness")
                         .HasColumnType("int")
-                        .HasColumnOrder(1017);
+                        .HasColumnOrder(1014);
 
                     b.Property<string>("ProfilePhotoUrl")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnOrder(1015);
+                        .HasColumnOrder(1012);
 
                     b.Property<int>("SrNo")
                         .HasColumnType("int")
@@ -314,16 +310,6 @@ namespace Faaz.Services.Student.Infrastructure.Migrations
                     b.Property<int?>("TargetStudyLevel")
                         .HasColumnType("int")
                         .HasColumnOrder(1011);
-
-                    b.PrimitiveCollection<string>("TargetSubjects")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnOrder(1012);
-
-                    b.PrimitiveCollection<string>("TargetUniversities")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnOrder(1013);
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2")
@@ -344,6 +330,58 @@ namespace Faaz.Services.Student.Infrastructure.Migrations
                         .HasDatabaseName("IX_StudentProfiles_UserId");
 
                     b.ToTable("StudentProfiles", "student");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Student.Domain.Entities.StudentProfileHelpService", b =>
+                {
+                    b.Property<Guid>("StudentProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ServiceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("StudentProfileId", "ServiceId");
+
+                    b.ToTable("StudentProfileHelpServices", "student");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Student.Domain.Entities.StudentProfileTargetProgramme", b =>
+                {
+                    b.Property<Guid>("StudentProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProgrammeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("StudentProfileId", "ProgrammeId");
+
+                    b.ToTable("StudentProfileTargetProgrammes", "student");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Student.Domain.Entities.StudentProfileTargetSubject", b =>
+                {
+                    b.Property<Guid>("StudentProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("StudentProfileId", "SubjectId");
+
+                    b.ToTable("StudentProfileTargetSubjects", "student");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Student.Domain.Entities.StudentProfileTargetUniversity", b =>
+                {
+                    b.Property<Guid>("StudentProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UniversityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("StudentProfileId", "UniversityId");
+
+                    b.ToTable("StudentProfileTargetUniversities", "student");
                 });
 
             modelBuilder.Entity("Faaz.Services.Student.Domain.Entities.UndergraduateData", b =>
@@ -440,6 +478,50 @@ namespace Faaz.Services.Student.Infrastructure.Migrations
                     b.Navigation("StudentProfile");
                 });
 
+            modelBuilder.Entity("Faaz.Services.Student.Domain.Entities.StudentProfileHelpService", b =>
+                {
+                    b.HasOne("Faaz.Services.Student.Domain.Entities.StudentProfile", "StudentProfile")
+                        .WithMany("HelpServices")
+                        .HasForeignKey("StudentProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StudentProfile");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Student.Domain.Entities.StudentProfileTargetProgramme", b =>
+                {
+                    b.HasOne("Faaz.Services.Student.Domain.Entities.StudentProfile", "StudentProfile")
+                        .WithMany("TargetProgrammes")
+                        .HasForeignKey("StudentProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StudentProfile");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Student.Domain.Entities.StudentProfileTargetSubject", b =>
+                {
+                    b.HasOne("Faaz.Services.Student.Domain.Entities.StudentProfile", "StudentProfile")
+                        .WithMany("TargetSubjects")
+                        .HasForeignKey("StudentProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StudentProfile");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Student.Domain.Entities.StudentProfileTargetUniversity", b =>
+                {
+                    b.HasOne("Faaz.Services.Student.Domain.Entities.StudentProfile", "StudentProfile")
+                        .WithMany("TargetUniversities")
+                        .HasForeignKey("StudentProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StudentProfile");
+                });
+
             modelBuilder.Entity("Faaz.Services.Student.Domain.Entities.UndergraduateData", b =>
                 {
                     b.HasOne("Faaz.Services.Student.Domain.Entities.StudentProfile", "StudentProfile")
@@ -453,9 +535,17 @@ namespace Faaz.Services.Student.Infrastructure.Migrations
 
             modelBuilder.Entity("Faaz.Services.Student.Domain.Entities.StudentProfile", b =>
                 {
+                    b.Navigation("HelpServices");
+
                     b.Navigation("PostgraduateData");
 
                     b.Navigation("SixthFormData");
+
+                    b.Navigation("TargetProgrammes");
+
+                    b.Navigation("TargetSubjects");
+
+                    b.Navigation("TargetUniversities");
 
                     b.Navigation("UndergraduateData");
                 });

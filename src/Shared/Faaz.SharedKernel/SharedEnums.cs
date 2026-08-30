@@ -42,4 +42,16 @@ public class SharedEnums
         InPerson = 2,
         Both     = 3
     }
+
+    // RQF-anchored study level, shared by Consultant (levels advised on) and Student (target level) —
+    // was two independently-duplicated local enums (ConsultantEnums.StudyLevel / StudentEnums.StudyLevel).
+    // PhD/Doctorate lives under PostgraduateResearch rather than as its own value.
+    public enum StudyLevel
+    {
+        SixthForm            = 1, // A-Level / IB / BTEC — RQF Level 3
+        Foundation           = 2, // Foundation year/pathway — bridges to RQF Level 4
+        Undergraduate        = 3, // Bachelor's / HNC / HND — RQF Levels 4-6
+        PostgraduateTaught   = 4, // Masters / PGDip / PGCert — RQF Level 7
+        PostgraduateResearch = 5  // MPhil / PhD / Doctorate — RQF Levels 7-8
+    }
 }

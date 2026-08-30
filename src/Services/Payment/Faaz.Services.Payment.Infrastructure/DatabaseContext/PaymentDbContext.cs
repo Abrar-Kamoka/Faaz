@@ -1,5 +1,6 @@
 using Faaz.BuildingBlocks.Persistence;
 using Faaz.Services.Payment.Domain.Entities;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace Faaz.Services.Payment.Infrastructure.DatabaseContext
@@ -27,6 +28,11 @@ namespace Faaz.Services.Payment.Infrastructure.DatabaseContext
             base.OnModelCreating(modelBuilder);
             modelBuilder.HasDefaultSchema("payment");
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(PaymentDbContext).Assembly);
+
+            // MassTransit EF outbox — see AddFaazRabbitMqWithOutbox<PaymentDbContext> in Program.cs.
+            modelBuilder.AddInboxStateEntity();
+            modelBuilder.AddOutboxMessageEntity();
+            modelBuilder.AddOutboxStateEntity();
 
             modelBuilder.Entity<Payment>().ApplyStandardColumnOrder(
                 nameof(Payment.BookingId), nameof(Payment.StudentUserId), nameof(Payment.ConsultantUserId),

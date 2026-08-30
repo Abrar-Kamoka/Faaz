@@ -15,11 +15,15 @@ public class AdminDbContext : DbContext
         base.ConfigureConventions(configurationBuilder);
     }
 
-    public DbSet<AdminActionLog> AdminActionLogs { get; set; }
-    public DbSet<PlatformConfig> PlatformConfigs { get; set; }
-    public DbSet<DisputeNote>    DisputeNotes    { get; set; }
-    public DbSet<University>     Universities    { get; set; }
-    public DbSet<Subject>        Subjects        { get; set; }
+    public DbSet<AdminActionLog>        AdminActionLogs        { get; set; }
+    public DbSet<PlatformConfig>        PlatformConfigs        { get; set; }
+    public DbSet<DisputeNote>           DisputeNotes           { get; set; }
+    public DbSet<University>            Universities           { get; set; }
+    public DbSet<Subject>               Subjects               { get; set; }
+    public DbSet<Programme>             Programmes             { get; set; }
+    public DbSet<ProgrammeSubject>      ProgrammeSubjects      { get; set; }
+    public DbSet<Service>               Services               { get; set; }
+    public DbSet<ReferenceDataRequest>  ReferenceDataRequests  { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -50,10 +54,32 @@ public class AdminDbContext : DbContext
             nameof(PlatformConfig.LastUpdatedAt), nameof(PlatformConfig.LastUpdatedByAdminId));
 
         builder.Entity<University>().ApplyStandardColumnOrder(
-            nameof(University.Name), nameof(University.Country), nameof(University.LogoUrl), nameof(University.IsActive));
+            nameof(University.Name), nameof(University.Ukprn), nameof(University.Country), nameof(University.Nation),
+            nameof(University.City), nameof(University.InstitutionType), nameof(University.IsRussellGroup),
+            nameof(University.LogoUrl), nameof(University.WebsiteUrl), nameof(University.IsActive),
+            nameof(University.DataSource), nameof(University.SourceUrl), nameof(University.LastVerifiedAt));
 
         builder.Entity<Subject>().ApplyStandardColumnOrder(
-            nameof(Subject.Name), nameof(Subject.Category), nameof(Subject.IsActive));
+            nameof(Subject.Name), nameof(Subject.HecosCode), nameof(Subject.Category), nameof(Subject.IsActive),
+            nameof(Subject.DataSource), nameof(Subject.SourceUrl), nameof(Subject.LastVerifiedAt));
+
+        builder.Entity<Programme>().ApplyStandardColumnOrder(
+            nameof(Programme.UniversityId), nameof(Programme.Title), nameof(Programme.StudyLevel),
+            nameof(Programme.Mode), nameof(Programme.DurationMonths), nameof(Programme.UcasCode),
+            nameof(Programme.EntryRequirements), nameof(Programme.TuitionFeeDomesticGbp),
+            nameof(Programme.TuitionFeeInternationalGbp), nameof(Programme.IsActive),
+            nameof(Programme.DataSource), nameof(Programme.SourceUrl), nameof(Programme.LastVerifiedAt));
+
+        builder.Entity<Service>().ApplyStandardColumnOrder(
+            nameof(Service.Name), nameof(Service.Description), nameof(Service.Category),
+            nameof(Service.SortOrder), nameof(Service.IsActive));
+
+        builder.Entity<ReferenceDataRequest>().ApplyStandardColumnOrder(
+            nameof(ReferenceDataRequest.RequestedByUserId), nameof(ReferenceDataRequest.RequestedByRole),
+            nameof(ReferenceDataRequest.EntityType), nameof(ReferenceDataRequest.ProposedName),
+            nameof(ReferenceDataRequest.Details), nameof(ReferenceDataRequest.Status),
+            nameof(ReferenceDataRequest.ReviewedByAdminUserId), nameof(ReferenceDataRequest.ReviewNotes),
+            nameof(ReferenceDataRequest.ReviewedAt));
     }
 
 }

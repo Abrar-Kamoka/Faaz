@@ -8,8 +8,9 @@ internal sealed class UpdateGoalsCommandValidator : AbstractValidator<UpdateGoal
     public UpdateGoalsCommandValidator()
     {
         RuleFor(x => x.PutModel.TargetStudyLevel).IsInEnum();
-        RuleFor(x => x.PutModel.TargetSubjects).Must(s => s.Length <= 10).WithMessage("Maximum 10 target subjects.");
-        RuleFor(x => x.PutModel.TargetUniversities).Must(u => u.Length <= 10).WithMessage("Maximum 10 target universities.");
-        RuleFor(x => x.PutModel.HelpTypes).Must(h => h != 0).WithMessage("At least one help type must be selected.");
+        RuleFor(x => x.PutModel.TargetSubjectIds).Must(s => s.Length <= 10).WithMessage("Maximum 10 target subjects.");
+        RuleFor(x => x.PutModel.TargetUniversityIds).Must(u => u.Length <= 10).WithMessage("Maximum 10 target universities.");
+        RuleFor(x => x.PutModel.TargetProgrammeIds).Must(p => p.Length <= 10).WithMessage("Maximum 10 target programmes.");
+        RuleFor(x => x.PutModel.HelpServiceIds).NotEmpty().WithMessage("At least one help service must be selected.");
     }
 }

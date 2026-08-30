@@ -5,6 +5,12 @@
   <ItemGroup Label="MediatR / CQRS">
     <PackageVersion Include="MediatR" Version="12.4.1" />
   </ItemGroup>
+  <ItemGroup Label="Excel Import/Export">
+    <PackageVersion Include="ClosedXML" Version="0.105.1" />
+  </ItemGroup>
+  <ItemGroup Label="CSV Parsing">
+    <PackageVersion Include="CsvHelper" Version="33.1.0" />
+  </ItemGroup>
   <ItemGroup Label="Validation">
     <PackageVersion Include="FluentValidation" Version="11.11.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />

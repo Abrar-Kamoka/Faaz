@@ -21,6 +21,9 @@ public class ConsultantDbContext : DbContext
     public DbSet<ConsultantSessionType> ConsultantSessionTypes => Set<ConsultantSessionType>();
     public DbSet<ConsultantAvailabilitySlot> ConsultantAvailabilitySlots => Set<ConsultantAvailabilitySlot>();
     public DbSet<ConsultantCredential> ConsultantCredentials => Set<ConsultantCredential>();
+    public DbSet<ConsultantProfileService> ConsultantProfileServices => Set<ConsultantProfileService>();
+    public DbSet<ConsultantProfileSubject> ConsultantProfileSubjects => Set<ConsultantProfileSubject>();
+    public DbSet<ConsultantProfileUniversity> ConsultantProfileUniversities => Set<ConsultantProfileUniversity>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -67,8 +70,7 @@ public class ConsultantDbContext : DbContext
             nameof(ConsultantProfile.UserId), nameof(ConsultantProfile.ApplicationId), nameof(ConsultantProfile.FullLegalName),
             nameof(ConsultantProfile.DisplayName), nameof(ConsultantProfile.ProfessionalPhotoUrl), nameof(ConsultantProfile.CurrentRole),
             nameof(ConsultantProfile.Institution), nameof(ConsultantProfile.LinkedInUrl), nameof(ConsultantProfile.YearsOfExperience),
-            nameof(ConsultantProfile.StudyLevelsOffered), nameof(ConsultantProfile.SubjectAreas), nameof(ConsultantProfile.SpecialisedUniversities),
-            nameof(ConsultantProfile.ServicesOffered), nameof(ConsultantProfile.WrittenBio), nameof(ConsultantProfile.IntroVideoUrl),
+            nameof(ConsultantProfile.StudyLevelsOffered), nameof(ConsultantProfile.WrittenBio), nameof(ConsultantProfile.IntroVideoUrl),
             nameof(ConsultantProfile.CallPreference), nameof(ConsultantProfile.MinBookingNoticeHours), nameof(ConsultantProfile.MaxAdvanceBookingDays),
             nameof(ConsultantProfile.TimeZoneId),
             nameof(ConsultantProfile.IsProfileComplete), nameof(ConsultantProfile.IsActive), nameof(ConsultantProfile.IsFeatured),

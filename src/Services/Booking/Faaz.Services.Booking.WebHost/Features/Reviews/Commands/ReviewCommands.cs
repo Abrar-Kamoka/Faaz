@@ -31,7 +31,7 @@ namespace Faaz.Services.Booking.WebHost.Features.Reviews.Commands
             if (booking.StudentUserId != command.RequestingUserId)
                 throw new ForbiddenException("Only the student can submit a review.");
 
-            var reviewableStatuses = new[] { BookingStatus.Completed, BookingStatus.Settled };
+            var reviewableStatuses = new[] { BookingStatus.Completed, BookingStatus.CompletedEarly, BookingStatus.Settled };
             if (!reviewableStatuses.Contains(booking.Status))
                 throw BusinessRuleException.Error("A review can only be submitted after a completed session.", "review.not-eligible");
 

@@ -21,6 +21,10 @@ internal sealed class StudentProfileManager : IStudentProfileServices
             .Include(p => p.SixthFormData)
             .Include(p => p.UndergraduateData)
             .Include(p => p.PostgraduateData)
+            .Include(p => p.HelpServices)
+            .Include(p => p.TargetUniversities)
+            .Include(p => p.TargetSubjects)
+            .Include(p => p.TargetProgrammes)
             .FirstOrDefaultAsync(p => p.UserId == userId, ct);
     }
 
@@ -31,6 +35,10 @@ internal sealed class StudentProfileManager : IStudentProfileServices
             .Include(p => p.SixthFormData)
             .Include(p => p.UndergraduateData)
             .Include(p => p.PostgraduateData)
+            .Include(p => p.HelpServices)
+            .Include(p => p.TargetUniversities)
+            .Include(p => p.TargetSubjects)
+            .Include(p => p.TargetProgrammes)
             .FirstOrDefaultAsync(p => p.UserId == userId, ct);
     }
 

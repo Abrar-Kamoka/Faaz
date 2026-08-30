@@ -1,10 +1,15 @@
 using static Faaz.Services.Consultant.Domain.ConsultantEnums;
+using static Faaz.SharedKernel.SharedEnums;
 
 namespace Faaz.Services.Consultant.WebHost.Features.ConsultantProfile.DTOs;
 
 public class ConsultantProfileDto
 {
     public Guid Id { get; set; }
+    // Same value as Id — mirrors ConsultantProfileSummaryDto's ProfileId so frontend code doesn't
+    // need to know which of the two DTOs it's holding to get the profile id (reviews/bookings are
+    // keyed by this, not UserId).
+    public Guid ProfileId { get; set; }
     public Guid UserId { get; set; }
     public Guid ApplicationId { get; set; }
     public string FullLegalName { get; set; } = string.Empty;
@@ -15,9 +20,11 @@ public class ConsultantProfileDto
     public string? LinkedInUrl { get; set; }
     public int YearsOfExperience { get; set; }
     public StudyLevel[] StudyLevelsOffered { get; set; } = [];
-    public string[] SubjectAreas { get; set; } = [];
-    public string[] SpecialisedUniversities { get; set; } = [];
-    public ServiceType[] ServicesOffered { get; set; } = [];
+    // References into Administration's real catalog — the client already holds that catalog
+    // (fetched via /api/v1/reference/*) to join these ids against names for display.
+    public Guid[] SubjectIds { get; set; } = [];
+    public Guid[] UniversityIds { get; set; } = [];
+    public Guid[] ServiceIds { get; set; } = [];
     public string? WrittenBio { get; set; }
     public string? IntroVideoUrl { get; set; }
     public string CallPreference { get; set; } = string.Empty;
@@ -67,7 +74,7 @@ public class ConsultantProfileSummaryDto
     public string  CurrentRole          { get; set; } = string.Empty;
     public string  Institution          { get; set; } = string.Empty;
     public string? ProfessionalPhotoUrl { get; set; }
-    public string[] SubjectAreas        { get; set; } = [];
+    public Guid[]  SubjectIds           { get; set; } = [];
     public int     YearsOfExperience    { get; set; }
     public decimal MinPriceGbp          { get; set; }
     public bool    IsVerified           { get; set; }

@@ -39,6 +39,15 @@ public static class AdminEnums
         UnfeatureConsultant       = 33,
         CreatePromoCode           = 34,
         UpdatePromoCode           = 35,
-        DeactivatePromoCode       = 36
+        DeactivatePromoCode       = 36,
+        CreateProgramme           = 37,
+        UpdateProgramme           = 38,
+        DeleteProgramme           = 39,
+        CreateService             = 40,
+        UpdateService             = 41,
+        DeleteService             = 42,
+        ApproveReferenceRequest   = 43,
+        RejectReferenceRequest    = 44,
+        BulkImport                = 45
     }
 }

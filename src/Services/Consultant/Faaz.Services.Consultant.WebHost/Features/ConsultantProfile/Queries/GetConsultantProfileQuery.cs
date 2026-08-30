@@ -1,8 +1,8 @@
 using Faaz.Services.Consultant.Infrastructure.Interfaces;
+using Faaz.Services.Consultant.Infrastructure.Services;
 using Faaz.Services.Consultant.WebHost.Features.ConsultantProfile.DTOs;
 using Faaz.SharedKernel.Exceptions;
 using MediatR;
-using static Faaz.Services.Consultant.Domain.ConsultantEnums;
 
 namespace Faaz.Services.Consultant.WebHost.Features.ConsultantProfile.Queries;
 
@@ -14,10 +14,12 @@ public class GetConsultantProfileQuery : IRequest<ConsultantProfileDto>
 internal sealed class GetConsultantProfileQueryHandler : IRequestHandler<GetConsultantProfileQuery, ConsultantProfileDto>
 {
     private readonly IConsultantProfileServices _profileServices;
+    private readonly IBookingReviewClient _reviewClient;
 
-    public GetConsultantProfileQueryHandler(IConsultantProfileServices profileServices)
+    public GetConsultantProfileQueryHandler(IConsultantProfileServices profileServices, IBookingReviewClient reviewClient)
     {
         _profileServices = profileServices;
+        _reviewClient = reviewClient;
     }
 
     public async Task<ConsultantProfileDto> Handle(GetConsultantProfileQuery query, CancellationToken ct)
@@ -25,9 +27,14 @@ internal sealed class GetConsultantProfileQueryHandler : IRequestHandler<GetCons
         var profile = await _profileServices.GetByUserIdWithCollectionsAsync(query.UserId, ct)
             ?? throw new NotFoundException("ConsultantProfile", query.UserId);
 
+        // Consultant doesn't own review data — best-effort live lookup against Booking;
+        // a failed lookup just leaves the rating at its zero-review default.
+        var reviewSummary = await _reviewClient.GetReviewSummaryAsync(profile.Id, ct);
+
         return new ConsultantProfileDto
         {
             Id = profile.Id,
+            ProfileId = profile.Id,
             UserId = profile.UserId,
             ApplicationId = profile.ApplicationId,
             FullLegalName = profile.FullLegalName,
@@ -37,10 +44,10 @@ internal sealed class GetConsultantProfileQueryHandler : IRequestHandler<GetCons
             Institution = profile.Institution,
             LinkedInUrl = profile.LinkedInUrl,
             YearsOfExperience = profile.YearsOfExperience,
-            StudyLevelsOffered      = (profile.StudyLevelsOffered ?? []).Select(x => (StudyLevel)x).ToArray(),
-            SubjectAreas            = profile.SubjectAreas ?? [],
-            SpecialisedUniversities = profile.SpecialisedUniversities ?? [],
-            ServicesOffered         = (profile.ServicesOffered ?? []).Select(x => (ServiceType)x).ToArray(),
+            StudyLevelsOffered      = profile.StudyLevelsOffered ?? [],
+            SubjectIds              = profile.Subjects.Select(s => s.SubjectId).ToArray(),
+            UniversityIds           = profile.Universities.Select(u => u.UniversityId).ToArray(),
+            ServiceIds              = profile.Services.Select(s => s.ServiceId).ToArray(),
             WrittenBio = profile.WrittenBio,
             IntroVideoUrl = profile.IntroVideoUrl,
             CallPreference = profile.CallPreference.ToString(),
@@ -50,8 +57,8 @@ internal sealed class GetConsultantProfileQueryHandler : IRequestHandler<GetCons
             IsProfileComplete = profile.IsProfileComplete,
             IsActive = profile.IsActive,
             IsVerified          = profile.IsFeatured,
-            AverageRating       = 0m,
-            ReviewCount         = 0,
+            AverageRating       = reviewSummary?.AverageRating ?? 0m,
+            ReviewCount         = reviewSummary?.TotalCount ?? 0,
             IsAvailableThisWeek = profile.AvailabilitySlots.Any(s => !s.IsBlockedDate),
             SessionTypes = profile.SessionTypes.Select(s => new SessionTypeDto
             {

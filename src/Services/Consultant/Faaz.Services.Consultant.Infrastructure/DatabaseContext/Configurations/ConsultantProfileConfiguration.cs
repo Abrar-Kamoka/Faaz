@@ -18,9 +18,6 @@ internal sealed class ConsultantProfileConfiguration : IEntityTypeConfiguration<
         builder.Property(p => p.CallPreference).HasConversion<int>();
 
         builder.Property(p => p.StudyLevelsOffered).HasColumnType("nvarchar(max)");
-        builder.Property(p => p.SubjectAreas).HasColumnType("nvarchar(max)");
-        builder.Property(p => p.SpecialisedUniversities).HasColumnType("nvarchar(max)");
-        builder.Property(p => p.ServicesOffered).HasColumnType("nvarchar(max)");
 
         builder.Property(p => p.IsFeatured).HasDefaultValue(false);
 
@@ -38,5 +35,38 @@ internal sealed class ConsultantProfileConfiguration : IEntityTypeConfiguration<
                .HasForeignKey(s => s.ConsultantProfileId).OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(p => p.AvailabilitySlots).WithOne(s => s.Profile)
                .HasForeignKey(s => s.ConsultantProfileId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasMany(p => p.Services).WithOne(s => s.Profile)
+               .HasForeignKey(s => s.ConsultantProfileId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasMany(p => p.Subjects).WithOne(s => s.Profile)
+               .HasForeignKey(s => s.ConsultantProfileId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasMany(p => p.Universities).WithOne(s => s.Profile)
+               .HasForeignKey(s => s.ConsultantProfileId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class ConsultantProfileServiceConfiguration : IEntityTypeConfiguration<ConsultantProfileService>
+{
+    public void Configure(EntityTypeBuilder<ConsultantProfileService> builder)
+    {
+        builder.ToTable("ConsultantProfileServices");
+        builder.HasKey(x => new { x.ConsultantProfileId, x.ServiceId });
+    }
+}
+
+internal sealed class ConsultantProfileSubjectConfiguration : IEntityTypeConfiguration<ConsultantProfileSubject>
+{
+    public void Configure(EntityTypeBuilder<ConsultantProfileSubject> builder)
+    {
+        builder.ToTable("ConsultantProfileSubjects");
+        builder.HasKey(x => new { x.ConsultantProfileId, x.SubjectId });
+    }
+}
+
+internal sealed class ConsultantProfileUniversityConfiguration : IEntityTypeConfiguration<ConsultantProfileUniversity>
+{
+    public void Configure(EntityTypeBuilder<ConsultantProfileUniversity> builder)
+    {
+        builder.ToTable("ConsultantProfileUniversities");
+        builder.HasKey(x => new { x.ConsultantProfileId, x.UniversityId });
     }
 }

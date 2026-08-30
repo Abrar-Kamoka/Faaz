@@ -90,7 +90,12 @@ public class BookingAdminInternalController : ControllerBase
             DisputeReason         = b.DisputeReason,
             DisputeResolution     = b.DisputeResolution,
             DisputeResolutionNote = b.DisputeResolutionNote,
-            DisputeResolvedAt     = b.DisputeResolvedAt
+            DisputeResolvedAt     = b.DisputeResolvedAt,
+            // The student's pre-session message and the consultant's own session notes — both
+            // private to the two participants otherwise (see SessionsController's ownership
+            // checks); admin gets read access here for oversight/dispute-resolution purposes.
+            SessionBrief          = b.SessionBrief,
+            SessionNotes          = b.SessionNotes
         }));
     }
 

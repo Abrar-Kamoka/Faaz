@@ -53,10 +53,12 @@ namespace Faaz.Services.Payment.WebHost.Consumers
 
                 payment.Status         = PaymentStatus.Failed;
                 payment.FailureMessage = result.ErrorMessage;
-                await _paymentServices.SaveChangesAsync();
 
+                // Published before SaveChangesAsync so the EF outbox captures it atomically.
                 await _publishEndpoint.Publish(new PaymentFailedEvent(
                     payment.BookingId, payment.StripePaymentIntentId, result.ErrorMessage ?? "Capture failed"));
+
+                await _paymentServices.SaveChangesAsync();
             }
         }
     }

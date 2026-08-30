@@ -55,7 +55,6 @@ namespace Faaz.Services.Booking.WebHost.Jobs
 
                 session.Status       = sessionNoShowStatus;
                 session.ActualEndUtc = DateTime.UtcNow;
-                await _sessionServices.SaveChangesAsync();
 
                 var prevStatus = booking.Status;
                 booking.Status = noShowStatus;
@@ -67,10 +66,13 @@ namespace Faaz.Services.Booking.WebHost.Jobs
                     ChangedAt  = DateTime.UtcNow,
                     Notes      = $"No-show: studentJoined={studentJoined}, consultantJoined={consultantJoined}"
                 });
-                await _bookingServices.SaveChangesAsync();
 
+                // Published before either SaveChangesAsync so the EF outbox captures it atomically.
                 await _publishEndpoint.Publish(new SessionNoShowEvent(
                     bookingId, booking.ConsultantUserId, booking.StudentUserId, studentJoined, consultantJoined));
+
+                await _sessionServices.SaveChangesAsync();
+                await _bookingServices.SaveChangesAsync();
             }
         }
     }

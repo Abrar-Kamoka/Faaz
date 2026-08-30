@@ -1,5 +1,6 @@
 using Faaz.SharedKernel.Entities;
 using static Faaz.Services.Consultant.Domain.ConsultantEnums;
+using static Faaz.SharedKernel.SharedEnums;
 
 namespace Faaz.Services.Consultant.Domain.Entities;
 
@@ -19,10 +20,9 @@ public class ConsultantProfile : BaseSoftDeleteModel
     public string Institution { get; set; } = string.Empty;
     public string? LinkedInUrl { get; set; }
     public int YearsOfExperience { get; set; }
-    public int[] StudyLevelsOffered { get; set; } = [];
-    public string[] SubjectAreas { get; set; } = [];
-    public string[] SpecialisedUniversities { get; set; } = [];
-    public int[] ServicesOffered { get; set; } = [];
+    // A 5-value enum has no scalability problem the way unbounded-cardinality subject/university/
+    // service references do — stays a plain JSON int[] column rather than a join table.
+    public StudyLevel[] StudyLevelsOffered { get; set; } = [];
     public string? WrittenBio { get; set; }
     public string? IntroVideoUrl { get; set; }
     public CallPreference CallPreference { get; set; } = CallPreference.Both;
@@ -46,4 +46,11 @@ public class ConsultantProfile : BaseSoftDeleteModel
     public ICollection<ConsultantSessionType> SessionTypes { get; set; } = [];
     public ICollection<ConsultantAvailabilitySlot> AvailabilitySlots { get; set; } = [];
     public ICollection<ConsultantCredential> Credentials { get; set; } = [];
+
+    // Replaces the old free-text SubjectAreas/SpecialisedUniversities and the ServiceType-enum
+    // ServicesOffered — all three now reference the real, admin-curated catalog owned by the
+    // Administration service (validated via AdministrationReferenceClient before save).
+    public ICollection<ConsultantProfileService> Services { get; set; } = [];
+    public ICollection<ConsultantProfileSubject> Subjects { get; set; } = [];
+    public ICollection<ConsultantProfileUniversity> Universities { get; set; } = [];
 }

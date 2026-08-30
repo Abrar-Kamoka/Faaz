@@ -86,11 +86,12 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
                 ChangedByUserId = command.RequestingStudentId,
                 Notes           = $"Rescheduled from {oldStart:u} to {newStart:u} — awaiting consultant re-confirmation"
             }, ct);
-            await _bookingServices.SaveChangesAsync(ct);
-
+            // Published before SaveChangesAsync so the EF outbox captures it atomically.
             await _publishEndpoint.Publish(new BookingRescheduledEvent(
                 booking.Id, booking.ConsultantUserId, booking.StudentUserId,
                 new DateTimeOffset(oldStart, TimeSpan.Zero), new DateTimeOffset(newStart, TimeSpan.Zero)), ct);
+
+            await _bookingServices.SaveChangesAsync(ct);
         }
     }
 }

@@ -47,11 +47,12 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
                 ToStatus        = BookingStatus.CancelledByConsultant, ChangedByUserId = command.RequestingConsultantId,
                 Notes           = command.Notes ?? "Consultant declined"
             }, ct);
-            await _bookingServices.SaveChangesAsync(ct);
-
+            // Published before SaveChangesAsync so the EF outbox captures it atomically.
             await _publishEndpoint.Publish(new BookingCancelledEvent(
                 booking.Id, booking.ConsultantUserId, booking.StudentUserId, $"consultant-{command.RequestingConsultantId}", "Consultant declined",
                 RefundRequired: true, RefundAmount: booking.TotalChargedGbp), ct);
+
+            await _bookingServices.SaveChangesAsync(ct);
         }
     }
 }

@@ -10,6 +10,8 @@ public class ReviewDto
     public string? ReviewText          { get; set; }
     public bool    IsPublic            { get; set; }
     public DateTime CreatedAt          { get; set; }
+    // Best-effort enrichment from the Identity service — null if that lookup failed.
+    public string? StudentName         { get; set; }
 }
 
 public class ReviewSummaryDto
@@ -38,4 +40,7 @@ public class AdminReviewDto
     public bool    IsPublic            { get; set; }
     public bool    IsDeleted           { get; set; }
     public DateTime CreatedAt          { get; set; }
+    // Best-effort enrichment from the Identity service — null if that lookup failed.
+    public string? StudentName         { get; set; }
+    public string? ConsultantName      { get; set; }
 }

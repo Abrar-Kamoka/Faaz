@@ -17,7 +17,7 @@ internal sealed class ConsultantServiceClient(HttpClient http) : IConsultantServ
     private record WireProfile(
         Guid Id, Guid UserId, string DisplayName, string? ProfessionalPhotoUrl,
         string CurrentRole, string Institution, bool IsVerified, decimal AverageRating,
-        int ReviewCount, string[] SubjectAreas, List<WireSessionType> SessionTypes, bool IsAvailableThisWeek);
+        int ReviewCount, Guid[] SubjectIds, List<WireSessionType> SessionTypes, bool IsAvailableThisWeek);
 
     public async Task<SavedConsultantSummary?> GetProfileSummaryAsync(Guid consultantUserId, CancellationToken ct = default)
     {
@@ -29,7 +29,7 @@ internal sealed class ConsultantServiceClient(HttpClient http) : IConsultantServ
 
         return new SavedConsultantSummary(
             p.UserId, p.Id, p.DisplayName, p.ProfessionalPhotoUrl, p.CurrentRole, p.Institution,
-            p.IsVerified, p.AverageRating, p.ReviewCount, p.SubjectAreas ?? [],
+            p.IsVerified, p.AverageRating, p.ReviewCount, p.SubjectIds ?? [],
             (p.SessionTypes ?? []).Select(s => new SavedConsultantSessionType(s.Id, s.Name, s.DurationMinutes, s.PriceGbp)).ToArray(),
             p.IsAvailableThisWeek);
     }

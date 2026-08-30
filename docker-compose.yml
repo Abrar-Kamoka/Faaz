@@ -68,7 +68,8 @@ services:
       - faaz-net
 
   rabbitmq:
-    image: rabbitmq:3.13-management
+    build:
+      context: ./infra/docker/rabbitmq
     container_name: faaz-rabbitmq
     ports:
       - "5672:5672"
@@ -143,6 +144,7 @@ services:
       Jwt__Authority: "http://identity:8080"
       Jwt__Audience: "faaz-api"
       ServiceApiKey: "${SERVICE_API_KEY}"
+      Services__AdministrationServiceUrl: "http://administration:8080"
       RabbitMq__Host: rabbitmq
       RabbitMq__VHost: /
       RabbitMq__Username: guest
@@ -168,6 +170,7 @@ services:
       Jwt__Authority: "http://identity:8080"
       Jwt__Audience: "faaz-api"
       ServiceApiKey: "${SERVICE_API_KEY}"
+      Services__AdministrationServiceUrl: "http://administration:8080"
       RabbitMq__Host: rabbitmq
       RabbitMq__VHost: /
       RabbitMq__Username: guest

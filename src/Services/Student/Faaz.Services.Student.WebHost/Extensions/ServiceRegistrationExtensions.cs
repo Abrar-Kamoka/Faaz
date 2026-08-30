@@ -35,6 +35,18 @@ public static class ServiceRegistrationExtensions
             return handler;
         });
 
+        services.AddHttpClient<IAdministrationReferenceClient, AdministrationReferenceClient>(client =>
+        {
+            client.BaseAddress = new Uri(config["Services:AdministrationServiceUrl"] ?? "https://localhost:55136");
+        })
+        .ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            var handler = new HttpClientHandler();
+            if (env.IsDevelopment())
+                handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            return handler;
+        });
+
         return services;
     }
 }

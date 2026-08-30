@@ -57,10 +57,11 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
                 ChangedByUserId = command.RequestingStudentId,
                 Notes           = command.PostModel.Reason
             }, ct);
-            await _bookingServices.SaveChangesAsync(ct);
-
+            // Published before SaveChangesAsync so the EF outbox captures it atomically.
             await _publishEndpoint.Publish(new BookingDisputedEvent(
                 booking.Id, booking.StudentUserId, booking.ConsultantUserId, command.PostModel.Reason), ct);
+
+            await _bookingServices.SaveChangesAsync(ct);
         }
     }
 }

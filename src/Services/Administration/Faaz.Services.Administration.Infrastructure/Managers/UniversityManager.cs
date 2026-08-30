@@ -19,7 +19,14 @@ internal sealed class UniversityManager : IUniversityServices
         if (isActive.HasValue)
             q = q.Where(x => x.IsActive == isActive.Value);
         var total = await q.CountAsync(ct);
-        var items = await q.OrderBy(x => x.Name)
+
+        // StartsWith matches first, then Contains matches, both then alphabetical — plain
+        // Contains+OrderBy(Name) buries the obvious match once the list runs into the hundreds.
+        var ordered = string.IsNullOrWhiteSpace(search)
+            ? q.OrderBy(x => x.Name)
+            : q.OrderByDescending(x => x.Name.StartsWith(search)).ThenBy(x => x.Name);
+
+        var items = await ordered
                            .Skip((page - 1) * pageSize).Take(pageSize)
                            .ToListAsync(ct);
         return (items, total);

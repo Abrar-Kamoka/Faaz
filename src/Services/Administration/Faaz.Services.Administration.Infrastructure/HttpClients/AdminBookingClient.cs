@@ -18,7 +18,8 @@ public record AdminBookingDetail(
     int Status, decimal AmountGbp, decimal PlatformFeeGbp,
     DateTime ScheduledStartUtc, DateTime ScheduledEndUtc, DateTime CreatedAt,
     string? DisputeReason = null, string? DisputeResolution = null,
-    string? DisputeResolutionNote = null, DateTime? DisputeResolvedAt = null);
+    string? DisputeResolutionNote = null, DateTime? DisputeResolvedAt = null,
+    string? SessionBrief = null, string? SessionNotes = null);
 
 public record PagedBookings(List<AdminBookingDetail> Items, int TotalCount);
 public record StudentBookingSummary(int TotalBookings);

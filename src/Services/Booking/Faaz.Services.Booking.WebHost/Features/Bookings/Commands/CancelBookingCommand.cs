@@ -86,15 +86,17 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
                 ChangedByUserId = command.RequestingUserId,
                 Notes           = command.PutModel.Reason ?? (isCancellingConsultant ? "Consultant cancelled" : "Student cancelled")
             }, ct);
-            await _bookingServices.SaveChangesAsync(ct);
-
             var refundAmount = Math.Round(booking.TotalChargedGbp * (refundPercentage / 100m), 2);
+
+            // Published before SaveChangesAsync so the EF outbox captures it atomically.
             await _publishEndpoint.Publish(new BookingCancelledEvent(
                 booking.Id, booking.ConsultantUserId, booking.StudentUserId,
                 isCancellingConsultant ? $"consultant-{command.RequestingUserId}" : $"student-{command.RequestingUserId}",
                 command.PutModel.Reason ?? "Cancelled",
                 RefundRequired: refundPercentage > 0,
                 RefundAmount:   refundAmount), ct);
+
+            await _bookingServices.SaveChangesAsync(ct);
         }
     }
 }

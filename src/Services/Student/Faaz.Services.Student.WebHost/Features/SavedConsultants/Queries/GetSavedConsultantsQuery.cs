@@ -39,7 +39,7 @@ internal sealed class GetSavedConsultantsQueryHandler : IRequestHandler<GetSaved
                 IsVerified           = s.IsVerified,
                 AverageRating        = s.AverageRating,
                 ReviewCount          = s.ReviewCount,
-                SubjectAreas         = s.SubjectAreas,
+                SubjectIds           = s.SubjectIds,
                 SessionTypes         = s.SessionTypes.Select(t => new SessionTypeSummaryDto
                 {
                     Id              = t.Id,

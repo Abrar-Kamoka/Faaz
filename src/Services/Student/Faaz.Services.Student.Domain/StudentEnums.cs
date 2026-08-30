@@ -9,23 +9,7 @@ public class StudentEnums
         Postgraduate = 3
     }
 
-    public enum StudyLevel
-    {
-        ALevel = 1,
-        Undergraduate = 2,
-        Postgraduate = 3,
-        Phd = 4
-    }
-
-    [Flags]
-    public enum HelpType
-    {
-        PersonalStatement = 1,
-        InterviewPrep = 2,
-        Ucas = 4,
-        Sop = 8,
-        Scholarships = 16,
-        Visa = 32,
-        GeneralGuidance = 64
-    }
+    // StudyLevel and HelpType used to live here — replaced by Faaz.SharedKernel.SharedEnums.StudyLevel
+    // and the Administration service's admin-editable Service catalog (see StudentProfileHelpService),
+    // the same shared vocabulary Consultant's ConsultantProfileService uses.
 }

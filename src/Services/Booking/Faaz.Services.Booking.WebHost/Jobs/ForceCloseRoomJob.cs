@@ -33,18 +33,22 @@ namespace Faaz.Services.Booking.WebHost.Jobs
 
                 session.Status        = SessionStatus.Completed;
                 session.ActualEndUtc  = DateTime.UtcNow;
-                await _sessionServices.SaveChangesAsync();
             }
 
             booking.Status      = BookingStatus.Completed;
             booking.CompletedAt = DateTime.UtcNow;
-            await _bookingServices.SaveChangesAsync();
 
             var actual = session?.ActualStartUtc.HasValue == true
                 ? (int)(session.ActualEndUtc!.Value - session.ActualStartUtc!.Value).TotalSeconds
                 : booking.DurationMinutes * 60;
 
+            // Published before either SaveChangesAsync so the EF outbox captures it atomically.
             await _publishEndpoint.Publish(new SessionCompletedEvent(bookingId, DateTimeOffset.UtcNow, actual));
+
+            if (session is not null)
+                await _sessionServices.SaveChangesAsync();
+            await _bookingServices.SaveChangesAsync();
+
             _logger.LogInformation("Force-closed room and marked booking {Id} as Completed", bookingId);
         }
     }

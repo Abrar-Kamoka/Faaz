@@ -22,6 +22,22 @@ try
 
     app.UseSerilogRequestLogging();
 
+    // Baseline headers for any response the Gateway generates itself (404s, blocked-route
+    // rejections) — responses proxied through from a backend already carry these from
+    // Faaz.BuildingBlocks' SecurityHeadersMiddleware and pass through unchanged.
+    app.Use(async (context, next) =>
+    {
+        context.Response.OnStarting(() =>
+        {
+            var headers = context.Response.Headers;
+            headers["X-Content-Type-Options"] = "nosniff";
+            headers["X-Frame-Options"] = "DENY";
+            headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+            return Task.CompletedTask;
+        });
+        await next();
+    });
+
     // Block service-to-service internal routes from being accessible via gateway
     app.UseMiddleware<BlockInternalRoutesMiddleware>();
 

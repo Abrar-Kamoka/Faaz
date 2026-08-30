@@ -407,7 +407,7 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
 
                     b.Property<int>("CallPreference")
                         .HasColumnType("int")
-                        .HasColumnOrder(1015);
+                        .HasColumnOrder(1012);
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2")
@@ -447,11 +447,11 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
 
                     b.Property<string>("IntroVideoUrl")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnOrder(1014);
+                        .HasColumnOrder(1011);
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasColumnOrder(1020);
+                        .HasColumnOrder(1017);
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit")
@@ -461,19 +461,19 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false)
-                        .HasColumnOrder(1021);
+                        .HasColumnOrder(1018);
 
                     b.Property<bool>("IsProfileComplete")
                         .HasColumnType("bit")
-                        .HasColumnOrder(1019);
+                        .HasColumnOrder(1016);
 
                     b.Property<bool>("IsStripeChargesEnabled")
                         .HasColumnType("bit")
-                        .HasColumnOrder(1024);
+                        .HasColumnOrder(1021);
 
                     b.Property<bool>("IsStripeDetailsSubmitted")
                         .HasColumnType("bit")
-                        .HasColumnOrder(1023);
+                        .HasColumnOrder(1020);
 
                     b.Property<string>("LinkedInUrl")
                         .HasColumnType("nvarchar(max)")
@@ -481,25 +481,15 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
 
                     b.Property<int>("MaxAdvanceBookingDays")
                         .HasColumnType("int")
-                        .HasColumnOrder(1017);
+                        .HasColumnOrder(1014);
 
                     b.Property<int>("MinBookingNoticeHours")
                         .HasColumnType("int")
-                        .HasColumnOrder(1016);
+                        .HasColumnOrder(1013);
 
                     b.Property<string>("ProfessionalPhotoUrl")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnOrder(1004);
-
-                    b.PrimitiveCollection<string>("ServicesOffered")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnOrder(1012);
-
-                    b.PrimitiveCollection<string>("SpecialisedUniversities")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnOrder(1011);
 
                     b.Property<int>("SrNo")
                         .HasColumnType("int")
@@ -507,22 +497,17 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
 
                     b.Property<string>("StripeAccountId")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnOrder(1022);
+                        .HasColumnOrder(1019);
 
                     b.PrimitiveCollection<string>("StudyLevelsOffered")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnOrder(1009);
 
-                    b.PrimitiveCollection<string>("SubjectAreas")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnOrder(1010);
-
                     b.Property<string>("TimeZoneId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnOrder(1018);
+                        .HasColumnOrder(1015);
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2")
@@ -538,7 +523,7 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
 
                     b.Property<string>("WrittenBio")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnOrder(1013);
+                        .HasColumnOrder(1010);
 
                     b.Property<int>("YearsOfExperience")
                         .HasColumnType("int")
@@ -558,6 +543,54 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                         .HasDatabaseName("IX_ConsultantProfiles_IsActive_IsProfileComplete");
 
                     b.ToTable("ConsultantProfiles", "consultant");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Consultant.Domain.Entities.ConsultantProfileService", b =>
+                {
+                    b.Property<Guid>("ConsultantProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ServiceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ConsultantProfileId", "ServiceId");
+
+                    b.ToTable("ConsultantProfileServices", "consultant");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Consultant.Domain.Entities.ConsultantProfileSubject", b =>
+                {
+                    b.Property<Guid>("ConsultantProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ConsultantProfileId", "SubjectId");
+
+                    b.ToTable("ConsultantProfileSubjects", "consultant");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Consultant.Domain.Entities.ConsultantProfileUniversity", b =>
+                {
+                    b.Property<Guid>("ConsultantProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UniversityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("VerifiedByAdminUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ConsultantProfileId", "UniversityId");
+
+                    b.ToTable("ConsultantProfileUniversities", "consultant");
                 });
 
             modelBuilder.Entity("Faaz.Services.Consultant.Domain.Entities.ConsultantSessionType", b =>
@@ -682,6 +715,39 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
                     b.Navigation("Application");
                 });
 
+            modelBuilder.Entity("Faaz.Services.Consultant.Domain.Entities.ConsultantProfileService", b =>
+                {
+                    b.HasOne("Faaz.Services.Consultant.Domain.Entities.ConsultantProfile", "Profile")
+                        .WithMany("Services")
+                        .HasForeignKey("ConsultantProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Profile");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Consultant.Domain.Entities.ConsultantProfileSubject", b =>
+                {
+                    b.HasOne("Faaz.Services.Consultant.Domain.Entities.ConsultantProfile", "Profile")
+                        .WithMany("Subjects")
+                        .HasForeignKey("ConsultantProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Profile");
+                });
+
+            modelBuilder.Entity("Faaz.Services.Consultant.Domain.Entities.ConsultantProfileUniversity", b =>
+                {
+                    b.HasOne("Faaz.Services.Consultant.Domain.Entities.ConsultantProfile", "Profile")
+                        .WithMany("Universities")
+                        .HasForeignKey("ConsultantProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Profile");
+                });
+
             modelBuilder.Entity("Faaz.Services.Consultant.Domain.Entities.ConsultantSessionType", b =>
                 {
                     b.HasOne("Faaz.Services.Consultant.Domain.Entities.ConsultantProfile", "Profile")
@@ -706,7 +772,13 @@ namespace Faaz.Services.Consultant.Infrastructure.Migrations
 
                     b.Navigation("Credentials");
 
+                    b.Navigation("Services");
+
                     b.Navigation("SessionTypes");
+
+                    b.Navigation("Subjects");
+
+                    b.Navigation("Universities");
                 });
 #pragma warning restore 612, 618
         }

@@ -19,7 +19,14 @@ internal sealed class SubjectManager : ISubjectServices
         if (isActive.HasValue)
             q = q.Where(x => x.IsActive == isActive.Value);
         var total = await q.CountAsync(ct);
-        var items = await q.OrderBy(x => x.Name)
+
+        // StartsWith matches first, then Contains matches, both then alphabetical — same ranking
+        // used by every other "pick from a long list" search in the app (see UniversityManager).
+        var ordered = string.IsNullOrWhiteSpace(search)
+            ? q.OrderBy(x => x.Name)
+            : q.OrderByDescending(x => x.Name.StartsWith(search)).ThenBy(x => x.Name);
+
+        var items = await ordered
                            .Skip((page - 1) * pageSize).Take(pageSize)
                            .ToListAsync(ct);
         return (items, total);

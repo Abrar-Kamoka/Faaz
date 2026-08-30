@@ -71,11 +71,12 @@ namespace Faaz.Services.Booking.WebHost.Features.Bookings.Commands
                 ChangedByUserId = command.AdminUserId,
                 Notes           = $"Dispute resolved: {resolution}. {command.PostModel.Note}"
             }, ct);
-            await _bookingServices.SaveChangesAsync(ct);
-
+            // Published before SaveChangesAsync so the EF outbox captures it atomically.
             await _publishEndpoint.Publish(new DisputeResolvedEvent(
                 booking.Id, booking.StudentUserId, booking.ConsultantUserId,
                 resolution, refundAmount, command.PostModel.Note, command.AdminUserId), ct);
+
+            await _bookingServices.SaveChangesAsync(ct);
         }
     }
 }

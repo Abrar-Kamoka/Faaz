@@ -173,6 +173,7 @@ public class AuthController : FaazApiController
 
     /// <summary>Verify email address using the token from the verification email.</summary>
     [HttpPost("verify-email")]
+    [EnableRateLimiting("auth")]
     [IgnoreAntiforgeryToken]
     [DisableRequestSizeLimit]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -185,6 +186,7 @@ public class AuthController : FaazApiController
 
     /// <summary>Resend verification email.</summary>
     [HttpPost("resend-verification")]
+    [EnableRateLimiting("auth")]
     [IgnoreAntiforgeryToken]
     [DisableRequestSizeLimit]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
@@ -208,6 +210,7 @@ public class AuthController : FaazApiController
 
     /// <summary>Reset password using token from email.</summary>
     [HttpPost("reset-password")]
+    [EnableRateLimiting("auth")]
     [IgnoreAntiforgeryToken]
     [DisableRequestSizeLimit]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]

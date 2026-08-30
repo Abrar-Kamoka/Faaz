@@ -2,7 +2,6 @@ using Faaz.Services.Student.Infrastructure.Interfaces;
 using Faaz.Services.Student.WebHost.Features.StudentProfile.DTOs;
 using Faaz.SharedKernel.Exceptions;
 using MediatR;
-using static Faaz.Services.Student.Domain.StudentEnums;
 
 namespace Faaz.Services.Student.WebHost.Features.StudentProfile.Queries;
 
@@ -24,11 +23,6 @@ internal sealed class GetStudentProfileQueryHandler : IRequestHandler<GetStudent
     {
         var p = await _profileServices.GetByUserIdAsync(query.UserId, ct)
             ?? throw new NotFoundException("StudentProfile", query.UserId);
-
-        var helpTypeFlags = Enum.GetValues<HelpType>()
-            .Where(flag => p.HelpTypes.HasFlag(flag))
-            .Select(flag => flag.ToString())
-            .ToArray();
 
         return new StudentProfileDto
         {
@@ -67,9 +61,12 @@ internal sealed class GetStudentProfileQueryHandler : IRequestHandler<GetStudent
                 ResearchInterests = p.PostgraduateData.ResearchInterests
             },
             TargetStudyLevel = p.TargetStudyLevel?.ToString(),
-            TargetSubjects = p.TargetSubjects,
-            TargetUniversities = p.TargetUniversities,
-            HelpTypes = helpTypeFlags,
+            // References into Administration's real catalog — the client already holds that catalog
+            // (fetched via /api/v1/reference/*) to join these ids against names for display.
+            TargetSubjectIds = p.TargetSubjects.Select(s => s.SubjectId).ToArray(),
+            TargetUniversityIds = p.TargetUniversities.Select(u => u.UniversityId).ToArray(),
+            TargetProgrammeIds = p.TargetProgrammes.Select(pr => pr.ProgrammeId).ToArray(),
+            HelpServiceIds = p.HelpServices.Select(s => s.ServiceId).ToArray(),
             ProfilePhotoUrl = p.ProfilePhotoUrl,
             Bio = p.Bio,
             ProfileCompleteness = p.ProfileCompleteness,

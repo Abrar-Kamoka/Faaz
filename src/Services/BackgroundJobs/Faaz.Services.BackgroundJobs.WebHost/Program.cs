@@ -40,9 +40,13 @@ try
 
     var app = builder.Build();
 
+    app.UseFaazMiddleware();
+
     if (app.Environment.IsDevelopment())
     {
-        app.UseHangfireDashboard("/hangfire", new DashboardOptions { Authorization = [] });
+        // No explicit Authorization filter — Hangfire's own default (LocalRequestsOnlyAuthorizationFilter)
+        // applies, restricting the dashboard to loopback requests only.
+        app.UseHangfireDashboard("/hangfire");
         app.MapGet("/", () => Results.Redirect("/hangfire")).AllowAnonymous();
     }
 

@@ -16,9 +16,10 @@ public class StudentProfileDto
     public UndergraduateDataDto? UndergraduateData { get; set; }
     public PostgraduateDataDto? PostgraduateData { get; set; }
     public string? TargetStudyLevel { get; set; }
-    public string[] TargetSubjects { get; set; } = [];
-    public string[] TargetUniversities { get; set; } = [];
-    public string[] HelpTypes { get; set; } = [];
+    public Guid[] TargetSubjectIds { get; set; } = [];
+    public Guid[] TargetUniversityIds { get; set; } = [];
+    public Guid[] TargetProgrammeIds { get; set; } = [];
+    public Guid[] HelpServiceIds { get; set; } = [];
     public string? ProfilePhotoUrl { get; set; }
     public string? Bio { get; set; }
     public int ProfileCompleteness { get; set; }
